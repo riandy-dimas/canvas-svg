@@ -1,7 +1,7 @@
 "use client"
 
 import clsx from "clsx";
-import { Canvas, Textbox, FabricObject, FabricImage, loadSVGFromString } from "fabric";
+import fabric, { Canvas, Textbox, FabricObject, FabricImage, loadSVGFromString, loadSVGFromURL, FabricText } from "fabric";
 import { ChangeEvent, useEffect, useRef, useState} from "react";
 
 export default function Home() {
@@ -45,27 +45,53 @@ export default function Home() {
 
   const handleAddImage = (e: ChangeEvent<HTMLInputElement>, canvas: Canvas | null) => {
     if (!e?.target?.files?.[0]) return
-    const reader = new FileReader();
+    // if file is svg then load it as svg string
+    if (e.target.files[0].type === "image/svg+xml") {
+      const reader = new FileReader();
       reader.onloadend = () => {
-        FabricImage.fromURL(reader.result as string)
-          .then((output) => {
-            output.on("selected", (e) => {
-              setSelecting(e.target)
-            })
-            output.on("deselected", () => {
-              setSelecting(undefined)
-            })
-            canvas?.add(output)
+        loadSVGFromString(reader.result as string).then((output) => {
+          const {objects, elements} = output
+          
+          objects.forEach((obj, index) => {
+            if (obj && obj.type === 'text') {
+              const currentElement = elements[index]
+              if (currentElement.children.length > 0 && currentElement.children[0].tagName === 'tspan') {
+                const tspan = currentElement.children[0]
+                // @ts-expect-error; TODO: define tspan types properly
+                const { x, y } = tspan.attributes
+
+                // THE FIX: Update x and y position of text object
+                obj.left += Number(x.value)
+                obj.top += Number(y.value)
+              }
+              // @ts-expect-error; TODO: define obj types properly
+              const text = new Textbox(obj.text, {
+                ...obj,
+                snapAngle: 45,
+                snapThreshold: 1,
+                editable: true,
+              })
+              text.on("selected", (e) => {
+                setSelecting(e.target)
+              })
+              text.on("deselected", () => {
+                setSelecting(undefined)
+              })
+              return canvas?.add(text);
+            }
+            obj && canvas?.add(obj);
           })
+        })
+
+        
       };
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsText(e.target.files[0]);
+      return
+    } else {
+
+    }
   }
 
-  const handleDeleteObject = (obj: FabricObject | undefined, canvas: Canvas | null) => {
-    if (!obj) return
-    canvas?.remove(obj)
-    setSelecting(undefined)
-  }
 
   const handleExportSvg = (canvas: Canvas | null) => {
     if (!canvas) return
@@ -78,6 +104,8 @@ export default function Home() {
     a.download = 'file.svg'
     a.click()
   }
+
+  
 
   return (
     <div className="grid grid-cols-[0.25fr_1fr] p-6">
@@ -121,19 +149,9 @@ export default function Home() {
   );
 }
 
-const Configuration = (props: { object?: FabricObject, canvas?: Canvas | null }) => {
-  if (!props.object) return null
 
-  if (props.object instanceof Textbox) {
-    return <div className="p-2">
-      <div className="badge text-lg">Textbox</div>
 
-      <button className="btn btn-outline" onClick={() => {
-        props.object?.set("fontWeight", (props.object as Textbox).fontWeight === "normal" ? "bold" : "normal")
-        props.canvas?.renderAll()
-      }}>Bold</button>
-    </div>
-  }
 
-  return null
-}
+
+
+
