@@ -218,6 +218,7 @@ export default function Home() {
   }
 
   const Configuration = (props: { canvas?: Canvas | null }) => {
+    if (!props.canvas?.getActiveObject()) return null
     if (props.canvas?.getActiveObject() instanceof Textbox) {
       return (
         <TextboxComponent
