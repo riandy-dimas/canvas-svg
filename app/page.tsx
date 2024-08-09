@@ -1,25 +1,41 @@
 'use client'
 
 import clsx from 'clsx'
-import fabric, {
+import {
   Canvas,
   Textbox,
-  FabricObject,
   FabricImage,
   loadSVGFromString,
-  loadSVGFromURL,
-  FabricText,
+  Line,
+  Group,
 } from 'fabric'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import TextboxComponent from '@/components/config/textbox'
-import { updateFontFamily } from '@/components/config/utils'
+import {
+  updateFontFamily,
+  CANVAS_CONFIG,
+  CONTROL_CONFIG,
+  initGridSnap,
+  fixTspanPosSVGObjImport,
+} from '@/components/config/utils'
 
 export default function Home() {
   const [isSelecting, setSelecting] = useState<boolean>(false)
+  const [isShowGrid, setIsShowGrid] = useState<boolean>(false)
+  const [gridObjects, setGridObjects] = useState<any>(null)
+
   const canvas = useRef<Canvas | null>(null)
 
   useEffect(() => {
     canvas.current = initCanvas()
+
+    // init grid snap
+    canvas.current.on('object:moving', (options) => {
+      // snap edges
+      if (CONTROL_CONFIG.snap) {
+        initGridSnap(options)
+      }
+    })
 
     return () => {
       canvas.current?.dispose()
@@ -27,13 +43,7 @@ export default function Home() {
     }
   }, [])
 
-  const initCanvas = () =>
-    new Canvas('c', {
-      height: 794,
-      width: 1123,
-      renderOnAddRemove: true,
-      preserveObjectStacking: true,
-    })
+  const initCanvas = () => new Canvas('c', CANVAS_CONFIG)
 
   const handleAddText = async (canvas: Canvas | null) => {
     const text = new Textbox('New text', {
@@ -67,42 +77,7 @@ export default function Home() {
       const reader = new FileReader()
       reader.onloadend = () => {
         loadSVGFromString(reader.result as string).then((output) => {
-          const { objects, elements } = output
-
-          objects.forEach((obj, index) => {
-            if (obj && obj.type === 'text') {
-              const currentElement = elements[index]
-              if (
-                currentElement.children.length > 0 &&
-                currentElement.children[0].tagName === 'tspan'
-              ) {
-                const tspan = currentElement.children[0]
-                // @ts-expect-error; TODO: define tspan types properly
-                const { x, y } = tspan.attributes
-
-                // THE FIX: Update x and y position of text object
-                obj.left += Number(x.value)
-                obj.top += Number(y.value)
-              }
-              // @ts-expect-error; TODO: define obj types properly
-              const text = new Textbox(obj.text, {
-                ...obj,
-                snapAngle: 45,
-                snapThreshold: 1,
-                editable: true,
-              })
-
-              text.on('selected', (e) => {
-                setSelecting(true)
-              })
-              text.on('deselected', () => {
-                setSelecting(false)
-              })
-
-              return canvas?.add(text)
-            }
-            obj && canvas?.add(obj)
-          })
+          fixTspanPosSVGObjImport({ output, setSelecting, canvas })
         })
       }
       reader.readAsText(e.target.files[0])
@@ -128,6 +103,67 @@ export default function Home() {
     const object = canvas?.getActiveObject()!
     canvas?.remove(object)
     setSelecting(false)
+  }
+
+  const toggleGrid = (canvas: Canvas | null, show: boolean) => {
+    if (show) {
+      const gridLines = []
+      for (let i = 0; i < CANVAS_CONFIG.width / CONTROL_CONFIG.grid; i++) {
+        // Y Line
+        gridLines.push(
+          new Line(
+            [
+              i * CONTROL_CONFIG.grid,
+              0,
+              i * CONTROL_CONFIG.grid,
+              CANVAS_CONFIG.height,
+            ],
+            {
+              stroke: '#ccc',
+              selectable: false,
+              hoverCursor: 'default',
+              excludeFromExport: true,
+              evented: false,
+            },
+          ),
+        )
+        // X Line
+        gridLines.push(
+          new Line(
+            [
+              0,
+              i * CONTROL_CONFIG.grid,
+              CANVAS_CONFIG.width,
+              i * CONTROL_CONFIG.grid,
+            ],
+            {
+              stroke: '#ccc',
+              selectable: false,
+              hoverCursor: 'default',
+              excludeFromExport: true,
+              evented: false,
+            },
+          ),
+        )
+      }
+
+      const gridObj = new Group(gridLines, {
+        selectable: false,
+        evented: false,
+        hoverCursor: 'default',
+        excludeFromExport: true,
+      })
+      setGridObjects(gridObj)
+      // console.log(gridObj)
+      !!canvas && canvas?.add(gridObj)
+    } else {
+      if (gridObjects) {
+        !!canvas && canvas?.remove(gridObjects)
+        setGridObjects(null)
+      }
+    }
+
+    setIsShowGrid((prev) => !prev)
   }
 
   const handleExportSvg = (canvas: Canvas | null) => {
@@ -160,6 +196,14 @@ export default function Home() {
     <div className="grid grid-cols-[0.25fr_1fr]">
       <div id="menu">
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
+          <li>
+            <button
+              className="btn btn-outline"
+              onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
+            >
+              GRID: {isShowGrid ? 'ON' : 'OFF'}
+            </button>
+          </li>
           <li>
             <button
               className="btn btn-outline"
