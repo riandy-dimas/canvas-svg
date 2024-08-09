@@ -1,6 +1,7 @@
 import clsx from "clsx"
 import { Canvas } from "fabric"
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from "lucide-react"
+import FontFaceObserver from "fontfaceobserver"
 
 export const fontDecoration = {
   bold: {
@@ -59,4 +60,13 @@ export const buttonDecorationBuilder = (
       {props.icon}
     </button>
   )
+}
+
+export const updateFontFamily = async (font: string, canvas?: Canvas | null) => {
+  var myfont = new FontFaceObserver(font)
+  await myfont.load()
+  if (!canvas) return
+  // when font is loaded, use it.
+  canvas.getActiveObject()?.set("fontFamily", font);
+  canvas.requestRenderAll();
 }

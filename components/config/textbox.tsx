@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Canvas, FabricObject, Textbox } from 'fabric'
-import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from 'lucide-react'
-import { buttonDecorationBuilder, fontDecoration } from './utils'
+import FontFaceObserver from "fontfaceobserver"
+import { buttonDecorationBuilder, fontDecoration, updateFontFamily } from './utils'
 
 type TextboxComponent = { object?: FabricObject<Textbox>, canvas?: Canvas | null }
 
@@ -11,24 +11,13 @@ const TextboxComponent = (props: TextboxComponent) => {
       fontWeight: props?.object?.get("fontWeight"),
       fontStyle: props?.object?.get("fontStyle"),
       underline: props?.object?.get("underline"),
+      textAlign: props?.object?.get("textAlign"),
+      fontSize: props?.object?.get("fontSize"),
+      fontFamily: props?.object?.get("fontFamily")
     }
     return property
   })
-  const updateFontFamily = (font: string) => {
-    var myfont = new FontFaceObserver(font)
-    myfont.load()
-      .then(function() {
-        if (!props.canvas) return
-        // when font is loaded, use it.
-        props.canvas.getActiveObject()?.set("fontFamily", font);
-        props.canvas.requestRenderAll();
-        
-      }).catch(function(e) {
-        console.log(e)
-        alert('font loading failed ' + font);
-      })
-    }
-      
+
   return (
     <div className="card bg-base-100 w-full rounded-r-none rounded-l-lg">
       <div className="card-body">
@@ -39,56 +28,29 @@ const TextboxComponent = (props: TextboxComponent) => {
           {buttonDecorationBuilder({...fontDecoration['underline']}, textBoxProperty.underline, (value) => { setTextBoxProperty((state) => ({...state, underline: value})) }, props.canvas)}
         </div>
         <div className="join">
-          <button
-            className="btn btn-outline btn-sm join-item"
-            onClick={
-              () => {
-                props.object?.set("textAlign", "left")
-                props.canvas?.requestRenderAll()
-              }
-            }
-          >
-            <AlignLeft size={20} />
-          </button>
-          <button
-            className="btn btn-outline btn-sm join-item"
-            onClick={
-              () => {
-                props.object?.set("textAlign", "center")
-                props.canvas?.requestRenderAll()
-              }
-            }
-          >
-            <AlignCenter size={20} />
-          </button>
-          <button
-            className="btn btn-outline btn-sm join-item"
-            onClick={
-              () => {
-                props.object?.set("textAlign", "right")
-                props.canvas?.requestRenderAll()
-              }
-            }
-          >
-            <AlignRight size={20} />
-          </button>
+          {buttonDecorationBuilder({...fontDecoration['textAlignLeft']}, textBoxProperty.textAlign, (value) => { setTextBoxProperty((state) => ({...state, textAlign: value})) }, props.canvas)}
+          {buttonDecorationBuilder({...fontDecoration['textAlignCenter']}, textBoxProperty.textAlign, (value) => { setTextBoxProperty((state) => ({...state, textAlign: value})) }, props.canvas)}
+          {buttonDecorationBuilder({...fontDecoration['textAlignRight']}, textBoxProperty.textAlign, (value) => { setTextBoxProperty((state) => ({...state, textAlign: value})) }, props.canvas)}
         </div>
         <div className="join join-vertical">
-          <label className="input input-bordered flex items-center gap-2 join-item text-accent-content">
+          <label className="input input-bordered flex items-center gap-2 join-item">
             <p className="text-sm whitespace-nowrap">Font size:</p>
-            <input type="number" className="grow w-full text-sm" value={props.object?.fontSize} onChange={(e) => {
-              props.canvas?.getActiveObject()?.set("fontSize", +e.target.value)
+            <input type="number" className="grow w-full text-sm" value={textBoxProperty['fontSize']} onChange={(e) => {
+              const value = +e.target.value
+              props.canvas?.getActiveObject()?.set("fontSize", value)
               props.canvas?.requestRenderAll()
+              setTextBoxProperty((state) => ({...state, fontSize: value}))
             }} />
           </label>
           <select
-            className="select select-bordered w-full join-item text-accent-content"
-            value={props.object?.fontFamily}
-            onChange={(e) => {
-              updateFontFamily(e.target.value)
+            className="select select-bordered w-full join-item"
+            value={textBoxProperty['fontFamily']}
+            onChange={async (e) => {
+              const value = e.target.value
+              await updateFontFamily(value, props.canvas)
+              setTextBoxProperty((state) => ({...state, fontFamily: value}))
             }}
           >
-            <option disabled>Select font type</option>
             <option value={"Roboto"}>Roboto</option>
             <option value={"Poppins"}>Poppins</option>
             <option value={"Mooli"}>Mooli</option>

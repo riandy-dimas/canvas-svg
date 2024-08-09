@@ -2,10 +2,10 @@
 
 import clsx from "clsx";
 import { Canvas, Textbox, FabricObject, FabricImage, loadSVGFromString } from "fabric";
-import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState} from "react";
 import FontFaceObserver from "fontfaceobserver"
 import TextboxComponent from "@/components/config/textbox";
+import { updateFontFamily } from "@/components/config/utils";
 
 
 export default function Home() {
@@ -30,13 +30,15 @@ export default function Home() {
     })
   );
 
-  const handleAddText = (canvas: Canvas | null) => {
+  const handleAddText = async (canvas: Canvas | null) => {
     const text = new Textbox('New text', {
       snapAngle: 45,
       snapThreshold: 1,
       editable: true,
       width: 200,
-      fontSize: 20
+      fontSize: 20,
+      textAlign: 'left',
+      fontFamily: 'Roboto',
     })
     text.on("selected", (e) => {
       setSelecting(e.target)
@@ -44,6 +46,8 @@ export default function Home() {
     text.on("deselected", () => {
       setSelecting(undefined)
     })
+    await updateFontFamily("Roboto", canvas)
+
     canvas?.add(text)
     canvas?.bringObjectToFront(text)
   }
