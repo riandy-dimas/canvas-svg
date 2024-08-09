@@ -9,6 +9,8 @@ import {
   Line,
   Group,
   FabricObject,
+  BasicTransformEvent,
+  TPointerEvent,
 } from 'fabric'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import TextboxComponent from '@/components/config/textbox'
@@ -39,19 +41,29 @@ export default function Home() {
   useEffect(() => {
     canvas.current = initCanvas()
 
-    // init grid snap
-    canvas.current.on('object:moving', (options) => {
-      // snap edges
-      if (CONTROL_CONFIG.snap) {
-        initGridSnap(options)
-      }
-    })
-
     return () => {
       canvas.current?.dispose()
       canvas.current = null
     }
   }, [])
+
+  useEffect(() => {
+    const handler = (
+      options: BasicTransformEvent<TPointerEvent> & {
+        target: FabricObject
+      },
+    ) => {
+      if (CONTROL_CONFIG.snap && isShowGrid) {
+        initGridSnap(options)
+      }
+    }
+
+    canvas.current?.on('object:moving', handler)
+
+    return () => {
+      canvas.current?.off('object:moving', handler)
+    }
+  }, [isShowGrid])
 
   const initCanvas = () => new Canvas('c', CANVAS_CONFIG)
 
