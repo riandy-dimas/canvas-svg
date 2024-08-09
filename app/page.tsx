@@ -30,6 +30,7 @@ import {
   Download,
 } from 'lucide-react'
 import ImageComponent from '@/components/config/image'
+import OtherComponent from '@/components/config/other'
 
 export default function Home() {
   const [selectedObject, setSelectedObject] = useState<FabricObject>()
@@ -233,7 +234,12 @@ export default function Home() {
         />
       )
     }
-    return null
+    return (
+      <OtherComponent
+        canvas={props?.canvas}
+        onDelete={() => handleDeleteObject(props.canvas)}
+      />
+    )
   }
 
   return (

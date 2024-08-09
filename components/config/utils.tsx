@@ -151,7 +151,16 @@ export const fixTspanPosSVGObjImport = ({
 
       return canvas?.add(text)
     }
-    obj && canvas?.add(obj)
+
+    if (obj) {
+      obj.on('selected', (e) => {
+        setSelectedObject(e.target)
+      })
+      obj.on('deselected', () => {
+        setSelectedObject(undefined)
+      })
+      canvas?.add(obj)
+    }
   })
 }
 
