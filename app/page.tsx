@@ -2,7 +2,10 @@
 
 import clsx from "clsx";
 import { Canvas, Textbox, FabricObject, FabricImage, loadSVGFromString } from "fabric";
+import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState} from "react";
+import FontFaceObserver from "fontfaceobserver"
+
 
 export default function Home() {
   const [isSelecting, setSelecting] = useState<FabricObject>()
@@ -22,7 +25,7 @@ export default function Home() {
       height: 794,
       width: 1123,
       renderOnAddRemove: true,
-      preserveObjectStacking: true
+      preserveObjectStacking: true,
     })
   );
 
@@ -31,7 +34,8 @@ export default function Home() {
       snapAngle: 45,
       snapThreshold: 1,
       editable: true,
-      width: 200
+      width: 200,
+      fontSize: 20
     })
     text.on("selected", (e) => {
       setSelecting(e.target)
@@ -69,9 +73,12 @@ export default function Home() {
 
   const handleExportSvg = (canvas: Canvas | null) => {
     if (!canvas) return
-    const svgString = String(canvas.toSVG())
 
-    const blob = new Blob([svgString], { type: 'image/svg+xml' })
+    const fontInjectScript = `<style>@import url('https://fonts.googleapis.com/css2?family=Mooli&amp;family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&amp;display=swap');</style>`
+
+    const svgString = String(canvas.toSVG())
+    const injectedSvg = svgString.replace('<defs>', `<defs>\n${fontInjectScript}`)
+    const blob = new Blob([injectedSvg], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -80,10 +87,10 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-cols-[0.25fr_1fr] p-6">
+    <div className="grid grid-cols-[0.25fr_1fr]">
       <div id="menu">
-        <ul className="menu bg-base-200 rounded-lg rounded-r-none">
-          <li><button className="btn" onClick={() => handleAddText(canvas.current)}>Add Text</button></li>
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
+          <li><button className="btn btn-outline" onClick={() => handleAddText(canvas.current)}>Add Text</button></li>
           <li>
             <input
               id="inputImage"
@@ -92,9 +99,9 @@ export default function Home() {
               accept="image/png,image/jpeg,image/jpg,image/svg+xml"
               className="hidden"
               placeholder="Add image" />
-            <label className="btn" htmlFor="inputImage">Import Image (.png,.jpg,.svg)</label>
+            <label className="btn btn-outline" htmlFor="inputImage">Import Image (.png,.jpg,.svg)</label>
           </li>
-          <li>
+          <li className="mt-2">
             <button
               className={clsx("btn btn-error", !isSelecting && "btn-disabled")}
               role="button"
@@ -110,7 +117,7 @@ export default function Home() {
             handleExportSvg(canvas.current)
           }}>Export SVG</button></li>
         </ul>
-        <div className="bg-base-200 rounded-l-lg mt-2 text-primary">
+        <div className="bg-base-200 rounded-l-lg rounded-r-none mt-2 text-primary w-[200px]">
           {isSelecting && <Configuration object={isSelecting} canvas={canvas.current} />}
         </div>
       </div>
@@ -122,17 +129,123 @@ export default function Home() {
 }
 
 const Configuration = (props: { object?: FabricObject, canvas?: Canvas | null }) => {
+  function loadAndUse(font: string) {
+    var myfont = new FontFaceObserver(font)
+    myfont.load()
+      .then(function() {
+        if (!props.canvas) return
+        // when font is loaded, use it.
+        props.canvas.getActiveObject()?.set("fontFamily", font);
+        props.canvas.requestRenderAll();
+        
+      }).catch(function(e) {
+        console.log(e)
+        alert('font loading failed ' + font);
+      });
+  }
+
+
   if (!props.object) return null
 
   if (props.object instanceof Textbox) {
-    return <div className="p-2">
-      <div className="badge text-lg">Textbox</div>
-
-      <button className="btn btn-outline" onClick={() => {
-        props.object?.set("fontWeight", (props.object as Textbox).fontWeight === "normal" ? "bold" : "normal")
-        props.canvas?.renderAll()
-      }}>Bold</button>
-    </div>
+    return (
+      <div className="card bg-base-100 w-full rounded-r-none rounded-l-lg">
+        <div className="card-body">
+          <h2 className="card-title font-mono">Textbox</h2>
+          <div className="join">
+            <button
+              className="btn btn-outline btn-sm join-item"
+              onClick={
+                () => {
+                  props.object?.set("fontWeight", (props.object as Textbox).fontWeight === "normal" ? "bold" : "normal")
+                  props.canvas?.requestRenderAll()
+                }
+              }
+            >
+              <Bold size={20} />
+            </button>
+            <button
+              className="btn btn-outline btn-sm join-item"
+              onClick={
+                () => {
+                  props.object?.set("fontStyle", (props.object as Textbox).fontStyle === "normal" ? "italic" : "normal")
+                  props.canvas?.requestRenderAll()
+                }
+              }
+            >
+              <Italic size={20} />
+            </button>
+            <button
+              className="btn btn-outline btn-sm join-item"
+              onClick={
+                () => {
+                  props.object?.set("underline", !(props.object as Textbox).underline)
+                  props.canvas?.requestRenderAll()
+                }
+              }
+            >
+              <Underline size={20} />
+            </button>
+          </div>
+          <div className="join">
+            <button
+              className="btn btn-outline btn-sm join-item"
+              onClick={
+                () => {
+                  props.object?.set("textAlign", "left")
+                  props.canvas?.requestRenderAll()
+                }
+              }
+            >
+              <AlignLeft size={20} />
+            </button>
+            <button
+              className="btn btn-outline btn-sm join-item"
+              onClick={
+                () => {
+                  props.object?.set("textAlign", "center")
+                  props.canvas?.requestRenderAll()
+                }
+              }
+            >
+              <AlignCenter size={20} />
+            </button>
+            <button
+              className="btn btn-outline btn-sm join-item"
+              onClick={
+                () => {
+                  props.object?.set("textAlign", "right")
+                  props.canvas?.requestRenderAll()
+                }
+              }
+            >
+              <AlignRight size={20} />
+            </button>
+          </div>
+          <div className="join join-vertical">
+            <label className="input input-bordered flex items-center gap-2 join-item text-accent-content">
+              <p className="text-sm whitespace-nowrap">Font size:</p>
+              <input type="number" className="grow w-full text-sm" value={props.object.fontSize} onChange={(e) => {
+                props.canvas?.getActiveObject()?.set("fontSize", +e.target.value)
+                props.canvas?.requestRenderAll()
+              }} />
+            </label>
+            <select
+              className="select select-bordered w-full join-item text-accent-content"
+              value={props.object?.fontFamily}
+              onChange={(e) => {
+                loadAndUse(e.target.value)
+              }}
+            >
+              <option disabled>Select font type</option>
+              <option value={"Roboto"}>Roboto</option>
+              <option value={"Poppins"}>Poppins</option>
+              <option value={"Mooli"}>Mooli</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return null
