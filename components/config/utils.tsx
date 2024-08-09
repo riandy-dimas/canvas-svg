@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Canvas, Textbox } from 'fabric'
+import { Canvas, FabricObject, Textbox } from 'fabric'
 import {
   AlignCenter,
   AlignLeft,
@@ -9,6 +9,8 @@ import {
   Underline,
 } from 'lucide-react'
 import FontFaceObserver from 'fontfaceobserver'
+import { nanoid } from 'nanoid'
+import { SVGParsingOutput } from '@/types'
 
 export const CANVAS_CONFIG = {
   height: 794,
@@ -104,12 +106,18 @@ export const updateFontFamily = async (
   canvas.requestRenderAll()
 }
 
-// @ts-expect-error; TODO: define types properly
-export const fixTspanPosSVGObjImport = ({ output, setSelecting, canvas }) => {
+export const fixTspanPosSVGObjImport = ({
+  output,
+  setSelectedObject,
+  canvas,
+}: {
+  output: SVGParsingOutput
+  setSelectedObject: (object?: FabricObject) => void
+  canvas?: Canvas | null
+}) => {
   const { objects, elements } = output
-  // @ts-expect-error; TODO: define tspan types properly
   objects.forEach((obj, index) => {
-    if (obj && obj.type === 'text') {
+    if (obj && obj instanceof Textbox) {
       const currentElement = elements[index]
       if (
         currentElement.children.length > 0 &&
@@ -117,6 +125,7 @@ export const fixTspanPosSVGObjImport = ({ output, setSelecting, canvas }) => {
       ) {
         const tspan = currentElement.children[0]
 
+        // @ts-expect-error
         const { x, y } = tspan.attributes
 
         // THE FIX: Update x and y position of text object
@@ -129,13 +138,14 @@ export const fixTspanPosSVGObjImport = ({ output, setSelecting, canvas }) => {
         snapAngle: 45,
         snapThreshold: 1,
         editable: true,
+        customId: nanoid(),
       })
 
-      text.on('selected', () => {
-        setSelecting(true)
+      text.on('selected', (e) => {
+        setSelectedObject(e.target)
       })
       text.on('deselected', () => {
-        setSelecting(false)
+        setSelectedObject(undefined)
       })
 
       return canvas?.add(text)
