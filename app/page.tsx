@@ -92,6 +92,13 @@ export default function Home() {
                 editable: true,
               })
 
+              text.on('selected', (e) => {
+                setSelecting(true)
+              })
+              text.on('deselected', () => {
+                setSelecting(false)
+              })
+
               return canvas?.add(text)
             }
             obj && canvas?.add(obj)
