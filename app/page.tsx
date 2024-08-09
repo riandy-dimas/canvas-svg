@@ -155,6 +155,7 @@ export default function Home() {
               hoverCursor: 'default',
               excludeFromExport: true,
               evented: false,
+              opacity: 0.4,
             },
           ),
         )
@@ -173,6 +174,7 @@ export default function Home() {
               hoverCursor: 'default',
               excludeFromExport: true,
               evented: false,
+              opacity: 0.4,
             },
           ),
         )
@@ -242,7 +244,7 @@ export default function Home() {
             <button
               className={clsx(
                 'btn',
-                isShowGrid ? 'btn-primary' : 'btn-outline',
+                isShowGrid ? 'btn-neutral' : 'btn-outline',
               )}
               onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
             >

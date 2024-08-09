@@ -80,7 +80,7 @@ export const buttonDecorationBuilder = (
     <button
       className={clsx(
         'btn btn-sm join-item',
-        value === props.value ? 'btn-primary' : 'btn-outline',
+        value === props.value ? 'btn-neutral' : 'btn-outline',
       )}
       onClick={() => {
         canvas
