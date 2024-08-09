@@ -18,7 +18,7 @@ const config: Config = {
   },
   plugins: [daisyui],
   daisyui: {
-    themes: ["wireframe"]
+    themes: ["autumn"]
   }
 };
 export default config;

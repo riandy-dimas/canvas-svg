@@ -15,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="wireframe">
-      <body className={inter.className + " h-screen"}>{children}</body>
+    <html lang="en" data-theme="autumn">
+      <body className={inter.className + " h-screen flex items-center justify-center"}>{children}</body>
     </html>
   );
 }
