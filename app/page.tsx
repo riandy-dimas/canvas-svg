@@ -56,6 +56,7 @@ export default function Home() {
   const initCanvas = () => new Canvas('c', CANVAS_CONFIG)
 
   const handleAddText = async (canvas: Canvas | null) => {
+    canvas?.discardActiveObject()
     const text = new Textbox('New text', {
       snapAngle: 45,
       snapThreshold: 1,
@@ -76,12 +77,14 @@ export default function Home() {
 
     canvas?.add(text)
     canvas?.bringObjectToFront(text)
+    canvas?.setActiveObject(text)
   }
 
   const handleAddImage = (
     e: ChangeEvent<HTMLInputElement>,
     canvas: Canvas | null,
   ) => {
+    canvas?.discardActiveObject()
     if (!e?.target?.files?.[0]) return
     // if file is svg then load it as svg string
     if (e.target.files[0].type === 'image/svg+xml') {
@@ -106,6 +109,7 @@ export default function Home() {
             setSelectedObject(undefined)
           })
           canvas?.add(output)
+          canvas?.setActiveObject(output)
         })
       }
       reader.readAsDataURL(e.target.files[0])
