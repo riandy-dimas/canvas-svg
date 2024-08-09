@@ -3,17 +3,17 @@ import { Canvas, FabricObject, Textbox } from 'fabric'
 import FontFaceObserver from "fontfaceobserver"
 import { buttonDecorationBuilder, fontDecoration, updateFontFamily } from './utils'
 
-type TextboxComponent = { object?: FabricObject<Textbox>, canvas?: Canvas | null }
+type TextboxComponent = { canvas?: Canvas | null }
 
 const TextboxComponent = (props: TextboxComponent) => {
   const [textBoxProperty, setTextBoxProperty] = useState(() => {
     const property = {
-      fontWeight: props?.object?.get("fontWeight"),
-      fontStyle: props?.object?.get("fontStyle"),
-      underline: props?.object?.get("underline"),
-      textAlign: props?.object?.get("textAlign"),
-      fontSize: props?.object?.get("fontSize"),
-      fontFamily: props?.object?.get("fontFamily")
+      fontWeight: props?.canvas?.getActiveObject()?.get("fontWeight"),
+      fontStyle: props?.canvas?.getActiveObject()?.get("fontStyle"),
+      underline: props?.canvas?.getActiveObject()?.get("underline"),
+      textAlign: props?.canvas?.getActiveObject()?.get("textAlign"),
+      fontSize: props?.canvas?.getActiveObject()?.get("fontSize"),
+      fontFamily: props?.canvas?.getActiveObject()?.get("fontFamily")
     }
     return property
   })
