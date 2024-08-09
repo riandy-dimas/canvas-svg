@@ -30,7 +30,7 @@ export default function Home() {
   const canvas = useRef<Canvas | null>(null)
 
   const saveState = (newState: any) => {
-    const state = JSON.stringify(newState)
+    const state = newState.toJSON()
     setHistoryStack((prev) => [...prev, state])
     setStackCursor((prev) => prev + 1)
 
@@ -216,7 +216,7 @@ export default function Home() {
     return null
   }
 
-  const undo = (canvas: Canvas | null) => {
+  const undo = async (canvas: Canvas | null) => {
     if (!canvas) return
     if (stackCursor === 0) return
 
@@ -225,20 +225,20 @@ export default function Home() {
     console.log(historyStack[stackCursor - 1])
 
     // canvas.clear()
-    canvas.loadFromJSON(historyStack[stackCursor - 1])
-    canvas?.renderAll()
+    await canvas.loadFromJSON(historyStack[stackCursor - 1])
+    await canvas?.renderAll()
+    // canvas?.
   }
 
-  const redo = (canvas: Canvas | null) => {
+  const redo = async (canvas: Canvas | null) => {
     if (!canvas) return
     if (stackCursor === historyStack.length) return
 
     setStackCursor((prev) => prev + 1)
 
     // canvas.clear()
-    canvas.loadFromJSON(historyStack[stackCursor + 1], () =>
-      canvas?.renderAll(),
-    )
+    await canvas.loadFromJSON(historyStack[stackCursor + 1])
+    await canvas?.renderAll()
   }
 
   return (
