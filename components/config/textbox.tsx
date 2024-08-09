@@ -105,6 +105,7 @@ const TextboxComponent = (props: TextboxComponent) => {
             }}
           >
             <option value={'Roboto'}>Roboto</option>
+            <option value={'Inter'}>Inter</option>
             <option value={'Poppins'}>Poppins</option>
             <option value={'Mooli'}>Mooli</option>
           </select>
