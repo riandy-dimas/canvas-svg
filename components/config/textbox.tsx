@@ -20,14 +20,14 @@ const TextboxComponent = (props: TextboxComponent) => {
 
   return (
     <div className="card bg-base-100 w-full rounded-r-none rounded-l-lg">
-      <div className="card-body">
+      <div className="card-body p-2">
         <h2 className="card-title font-mono">Textbox</h2>
-        <div className="join">
+        <div className="join grid grid-flow-col">
           {buttonDecorationBuilder({...fontDecoration['bold']}, textBoxProperty.fontWeight, (value) => { setTextBoxProperty((state) => ({...state, fontWeight: value})) }, props.canvas)}
           {buttonDecorationBuilder({...fontDecoration['italic']}, textBoxProperty.fontStyle, (value) => { setTextBoxProperty((state) => ({...state, fontStyle: value})) }, props.canvas)}
           {buttonDecorationBuilder({...fontDecoration['underline']}, textBoxProperty.underline, (value) => { setTextBoxProperty((state) => ({...state, underline: value})) }, props.canvas)}
         </div>
-        <div className="join">
+        <div className="join grid grid-flow-col">
           {buttonDecorationBuilder({...fontDecoration['textAlignLeft']}, textBoxProperty.textAlign, (value) => { setTextBoxProperty((state) => ({...state, textAlign: value})) }, props.canvas)}
           {buttonDecorationBuilder({...fontDecoration['textAlignCenter']}, textBoxProperty.textAlign, (value) => { setTextBoxProperty((state) => ({...state, textAlign: value})) }, props.canvas)}
           {buttonDecorationBuilder({...fontDecoration['textAlignRight']}, textBoxProperty.textAlign, (value) => { setTextBoxProperty((state) => ({...state, textAlign: value})) }, props.canvas)}
