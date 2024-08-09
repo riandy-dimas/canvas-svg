@@ -20,6 +20,14 @@ import {
   fixTspanPosSVGObjImport,
 } from '@/components/config/utils'
 import { nanoid } from 'nanoid'
+import {
+  Image,
+  Grid2x2Check,
+  Grid2x2X,
+  TypeOutline,
+  Download,
+} from 'lucide-react'
+import ImageComponent from '@/components/config/image'
 
 export default function Home() {
   const [selectedObject, setSelectedObject] = useState<FabricObject>()
@@ -104,7 +112,7 @@ export default function Home() {
     }
   }
 
-  const handleDeleteObject = (canvas: Canvas | null) => {
+  const handleDeleteObject = (canvas?: Canvas | null) => {
     const object = canvas?.getActiveObject()!
     canvas?.remove(object)
     setSelectedObject(undefined)
@@ -175,7 +183,6 @@ export default function Home() {
     if (!canvas) return
 
     const fontInjectScript = `<style>@import url('https://fonts.googleapis.com/css2?family=Mooli&amp;family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&amp;display=swap');</style>`
-
     const svgString = String(canvas.toSVG())
     const injectedSvg = svgString.replace(
       '<defs>',
@@ -190,9 +197,21 @@ export default function Home() {
   }
 
   const Configuration = (props: { canvas?: Canvas | null }) => {
-    if (!props.canvas?.getActiveObject()) return null
     if (props.canvas?.getActiveObject() instanceof Textbox) {
-      return <TextboxComponent canvas={props?.canvas} />
+      return (
+        <TextboxComponent
+          canvas={props?.canvas}
+          onDelete={() => handleDeleteObject(props.canvas)}
+        />
+      )
+    }
+    if (props.canvas?.getActiveObject() instanceof FabricImage) {
+      return (
+        <ImageComponent
+          canvas={props?.canvas}
+          onDelete={() => handleDeleteObject(props.canvas)}
+        />
+      )
     }
     return null
   }
@@ -203,18 +222,25 @@ export default function Home() {
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
           <li>
             <button
-              className="btn btn-outline"
+              className={clsx(
+                'btn',
+                isShowGrid ? 'btn-primary' : 'btn-outline',
+              )}
               onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
             >
-              GRID: {isShowGrid ? 'ON' : 'OFF'}
+              {isShowGrid ? <Grid2x2Check size={20} /> : <Grid2x2X size={20} />}
+              Grid Layouting
             </button>
           </li>
+        </ul>
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
           <li>
             <button
               className="btn btn-outline"
               onClick={() => handleAddText(canvas?.current)}
             >
-              Add Text
+              <TypeOutline size={20} />
+              Text
             </button>
           </li>
           <li>
@@ -226,25 +252,18 @@ export default function Home() {
               className="hidden"
               placeholder="Add image"
             />
-            <label className="btn btn-outline" htmlFor="inputImage">
-              Import Image (.png,.jpg,.svg)
-            </label>
-          </li>
-          <li className="mt-2">
-            <button
-              className={clsx(
-                'btn btn-error',
-                !selectedObject && 'btn-disabled',
-              )}
-              role="button"
-              aria-disabled={!selectedObject ? 'true' : 'false'}
-              onClick={() => {
-                handleDeleteObject(canvas?.current)
-              }}
+            <div
+              className="tooltip p-0"
+              data-tip="Accept .png, .jpeg/.jpg, .svg"
             >
-              Delete Element
-            </button>
+              <label className="btn btn-outline btn-block" htmlFor="inputImage">
+                <Image size={20} />
+                Image
+              </label>
+            </div>
           </li>
+        </ul>
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
           <li>
             <button
               className="btn btn-info"
@@ -252,7 +271,8 @@ export default function Home() {
                 handleExportSvg(canvas?.current)
               }}
             >
-              Export SVG
+              <Download size={20} />
+              Export as SVG
             </button>
           </li>
         </ul>
