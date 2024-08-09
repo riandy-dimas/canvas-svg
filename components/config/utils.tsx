@@ -9,6 +9,7 @@ import {
   Underline,
 } from 'lucide-react'
 import FontFaceObserver from 'fontfaceobserver'
+import { useCallback, useState } from 'react'
 
 export const CANVAS_CONFIG = {
   height: 794,
@@ -235,5 +236,51 @@ export const initGridSnap = (options: any) => {
         top: h2 - oH2,
       })
       .setCoords()
+  }
+}
+
+export const useCanvasHistory = (
+  canvas: Canvas | null,
+  historyStack: any,
+  historyIndex: any,
+  setHistoryStack: any,
+  setHistoryIndex: any,
+) => {
+  const saveState = (newState: any) => {
+    const state = JSON.stringify(newState)
+
+    setHistoryStack((prev: any) => [...prev, state])
+    setHistoryIndex(historyIndex + 1)
+  }
+
+  const undo = () => {
+    if (!canvas) return
+    if (historyIndex === 0) return
+
+    setHistoryIndex(historyIndex - 1)
+
+    console.log(historyIndex)
+
+    // canvas.clear()
+    // canvas.loadFromJSON(historyStack[historyIndex - 1])
+    // canvas?.renderAll()
+  }
+
+  const redo = () => {
+    if (!canvas) return
+    if (historyIndex === historyStack.length) return
+
+    setHistoryIndex(historyIndex + 1)
+
+    // canvas.clear()
+    canvas.loadFromJSON(historyStack[historyIndex + 1], () =>
+      canvas?.renderAll(),
+    )
+  }
+
+  return {
+    saveState,
+    undo,
+    redo,
   }
 }

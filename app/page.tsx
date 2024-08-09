@@ -17,16 +17,28 @@ import {
   CONTROL_CONFIG,
   initGridSnap,
   fixTspanPosSVGObjImport,
+  useCanvasHistory,
 } from '@/components/config/utils'
 
 export default function Home() {
   const [isSelecting, setSelecting] = useState<boolean>(false)
   const [isShowGrid, setIsShowGrid] = useState<boolean>(false)
   const [gridObjects, setGridObjects] = useState<any>(null)
+  const [historyStack, setHistoryStack] = useState<any>([])
+  const [stackCursor, setStackCursor] = useState<number>(0)
 
   const canvas = useRef<Canvas | null>(null)
 
+  const saveState = (newState: any) => {
+    const state = JSON.stringify(newState)
+    setHistoryStack((prev) => [...prev, state])
+    setStackCursor((prev) => prev + 1)
+
+    console.log(historyStack)
+  }
+
   useEffect(() => {
+    console.log('re-render')
     canvas.current = initCanvas()
 
     // init grid snap
@@ -36,6 +48,18 @@ export default function Home() {
         initGridSnap(options)
       }
     })
+
+    // canvas.current.on('object:added', () => {
+    //   saveState(canvas.current)
+    // })
+
+    canvas.current.on('object:modified', () => {
+      saveState(canvas.current)
+    })
+
+    // canvas.current.on('object:removed', () => {
+    //   saveState(canvas.current)
+    // })
 
     return () => {
       canvas.current?.dispose()
@@ -192,16 +216,55 @@ export default function Home() {
     return null
   }
 
+  const undo = (canvas: Canvas | null) => {
+    if (!canvas) return
+    if (stackCursor === 0) return
+
+    setStackCursor((prev) => prev - 1)
+
+    console.log(historyStack[stackCursor - 1])
+
+    // canvas.clear()
+    canvas.loadFromJSON(historyStack[stackCursor - 1])
+    canvas?.renderAll()
+  }
+
+  const redo = (canvas: Canvas | null) => {
+    if (!canvas) return
+    if (stackCursor === historyStack.length) return
+
+    setStackCursor((prev) => prev + 1)
+
+    // canvas.clear()
+    canvas.loadFromJSON(historyStack[stackCursor + 1], () =>
+      canvas?.renderAll(),
+    )
+  }
+
   return (
     <div className="grid grid-cols-[0.25fr_1fr]">
       <div id="menu">
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
-          <li>
+          <li className="flex flex-row items-center justify-between mb-4">
             <button
-              className="btn btn-outline"
+              className={`btn ${isShowGrid ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
             >
-              GRID: {isShowGrid ? 'ON' : 'OFF'}
+              #
+            </button>
+            <button
+              className="btn btn-outline"
+              onClick={() => undo(canvas?.current)}
+              disabled={stackCursor === 0}
+            >
+              {`<`}
+            </button>
+            <button
+              className="btn btn-outline"
+              onClick={() => redo(canvas?.current)}
+              disabled={stackCursor === historyStack.length - 1}
+            >
+              {`>`}
             </button>
           </li>
           <li>
@@ -209,7 +272,7 @@ export default function Home() {
               className="btn btn-outline"
               onClick={() => handleAddText(canvas?.current)}
             >
-              Add Text
+              Add Text {stackCursor}
             </button>
           </li>
           <li>
