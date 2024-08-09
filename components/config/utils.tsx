@@ -19,7 +19,7 @@ export const fontDecoration = {
   underline: {
     name: 'underline',
     icon: <Underline size={20} />,
-    fn: (inactive: boolean) => !inactive,
+    fn: (val: boolean) => val,
     value: true
   },
   textAlignLeft: {
