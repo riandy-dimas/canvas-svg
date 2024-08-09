@@ -8,6 +8,7 @@ import {
   loadSVGFromString,
   Line,
   Group,
+  FabricObject,
 } from 'fabric'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import TextboxComponent from '@/components/config/textbox'
@@ -18,9 +19,10 @@ import {
   initGridSnap,
   fixTspanPosSVGObjImport,
 } from '@/components/config/utils'
+import { nanoid } from 'nanoid'
 
 export default function Home() {
-  const [isSelecting, setSelecting] = useState<boolean>(false)
+  const [selectedObject, setSelectedObject] = useState<FabricObject>()
   const [isShowGrid, setIsShowGrid] = useState<boolean>(false)
   const [gridObjects, setGridObjects] = useState<any>(null)
 
@@ -54,12 +56,13 @@ export default function Home() {
       fontSize: 20,
       textAlign: 'left',
       fontFamily: 'Roboto',
+      customId: nanoid(),
     })
     text.on('selected', (e) => {
-      setSelecting(true)
+      setSelectedObject(e.target)
     })
     text.on('deselected', () => {
-      setSelecting(false)
+      setSelectedObject(undefined)
     })
     await updateFontFamily('Roboto', canvas)
 
@@ -77,7 +80,7 @@ export default function Home() {
       const reader = new FileReader()
       reader.onloadend = () => {
         loadSVGFromString(reader.result as string).then((output) => {
-          fixTspanPosSVGObjImport({ output, setSelecting, canvas })
+          fixTspanPosSVGObjImport({ output, setSelectedObject, canvas })
         })
       }
       reader.readAsText(e.target.files[0])
@@ -85,12 +88,14 @@ export default function Home() {
     } else {
       const reader = new FileReader()
       reader.onloadend = () => {
-        FabricImage.fromURL(reader.result as string).then((output) => {
+        FabricImage.fromURL(reader.result as string, undefined, {
+          customId: nanoid(),
+        }).then((output) => {
           output.on('selected', (e) => {
-            setSelecting(true)
+            setSelectedObject(e.target)
           })
           output.on('deselected', () => {
-            setSelecting(false)
+            setSelectedObject(undefined)
           })
           canvas?.add(output)
         })
@@ -102,7 +107,7 @@ export default function Home() {
   const handleDeleteObject = (canvas: Canvas | null) => {
     const object = canvas?.getActiveObject()!
     canvas?.remove(object)
-    setSelecting(false)
+    setSelectedObject(undefined)
   }
 
   const toggleGrid = (canvas: Canvas | null, show: boolean) => {
@@ -227,9 +232,12 @@ export default function Home() {
           </li>
           <li className="mt-2">
             <button
-              className={clsx('btn btn-error', !isSelecting && 'btn-disabled')}
+              className={clsx(
+                'btn btn-error',
+                !selectedObject && 'btn-disabled',
+              )}
               role="button"
-              aria-disabled={!isSelecting ? 'true' : 'false'}
+              aria-disabled={!selectedObject ? 'true' : 'false'}
               onClick={() => {
                 handleDeleteObject(canvas?.current)
               }}
@@ -249,7 +257,10 @@ export default function Home() {
           </li>
         </ul>
         <div className="bg-base-200 rounded-l-lg rounded-r-none mt-2 text-primary w-[200px]">
-          <Configuration canvas={canvas?.current} />
+          <Configuration
+            key={selectedObject?.customId}
+            canvas={canvas?.current}
+          />
         </div>
       </div>
       <div
