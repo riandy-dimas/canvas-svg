@@ -26,7 +26,7 @@
   }
 }
 
-@font-face {
+/* @font-face {
   font-family: 'Mooli';
   font-weight: 400;
   src: url('./fonts/Mooli-Regular.ttf') format('truetype');
@@ -52,7 +52,7 @@
   font-weight: 400;
   src: url('./fonts/Poppins-Regular.ttf') format('truetype');
   font-display: swap;
-}
+} */
 
 body {
   color: rgb(var(--foreground-rgb));
