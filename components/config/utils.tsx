@@ -22,7 +22,8 @@ export const CANVAS_CONFIG = {
 export const CONTROL_CONFIG = {
   grid: 40,
   snap: true,
-  snapThreshold: 10,
+  snapThreshold: 3,
+  snapAngle: 45,
 }
 
 export const fontDecoration = {
@@ -135,8 +136,8 @@ export const fixTspanPosSVGObjImport = ({
 
       const text = new Textbox(obj.text, {
         ...obj,
-        snapAngle: 45,
-        snapThreshold: 1,
+        snapAngle: CONTROL_CONFIG.snapAngle,
+        snapThreshold: CONTROL_CONFIG.snapThreshold,
         editable: true,
         customId: nanoid(),
       })

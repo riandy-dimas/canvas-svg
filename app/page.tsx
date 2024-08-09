@@ -70,8 +70,8 @@ export default function Home() {
   const handleAddText = async (canvas: Canvas | null) => {
     canvas?.discardActiveObject()
     const text = new Textbox('New text', {
-      snapAngle: 45,
-      snapThreshold: 1,
+      snapAngle: CONTROL_CONFIG.snapAngle,
+      snapThreshold: CONTROL_CONFIG.snapThreshold,
       editable: true,
       width: 200,
       fontSize: 20,
@@ -113,6 +113,8 @@ export default function Home() {
       reader.onloadend = () => {
         FabricImage.fromURL(reader.result as string, undefined, {
           customId: nanoid(),
+          snapAngle: CONTROL_CONFIG.snapAngle,
+          snapThreshold: CONTROL_CONFIG.snapThreshold,
         }).then((output) => {
           output.on('selected', (e) => {
             setSelectedObject(e.target)
