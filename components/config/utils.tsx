@@ -123,7 +123,7 @@ export const fixTspanPosSVGObjImport = ({ output, setSelecting, canvas }) => {
         obj.left += Number(x.value)
         obj.top += Number(y.value)
       }
-      // @ts-expect-error; TODO: define obj types properly
+
       const text = new Textbox(obj.text, {
         ...obj,
         snapAngle: 45,
