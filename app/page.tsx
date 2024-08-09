@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import clsx from 'clsx'
 import fabric, {
@@ -13,10 +13,11 @@ import fabric, {
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import TextboxComponent from '@/components/config/textbox'
 import { updateFontFamily } from '@/components/config/utils'
+import { nanoid } from 'nanoid'
 
 export default function Home() {
-  const [isSelecting, setSelecting] = useState<boolean>(false)
-  const canvas = useRef<Canvas | null>(null)
+  const [selectedObject, setSelecting] = useState<FabricObject>()
+  const canvas = useRef<Canvas | null>(null);
 
   useEffect(() => {
     canvas.current = initCanvas()
@@ -44,12 +45,13 @@ export default function Home() {
       fontSize: 20,
       textAlign: 'left',
       fontFamily: 'Roboto',
+      customId: nanoid(7)
     })
-    text.on('selected', (e) => {
-      setSelecting(true)
+    text.on("selected", (e) => {
+      setSelecting(e.target)
     })
-    text.on('deselected', () => {
-      setSelecting(false)
+    text.on("deselected", () => {
+      setSelecting(undefined)
     })
     await updateFontFamily('Roboto', canvas)
 
@@ -93,10 +95,10 @@ export default function Home() {
               })
 
               text.on('selected', (e) => {
-                setSelecting(true)
+                setSelecting(e.target)
               })
               text.on('deselected', () => {
-                setSelecting(false)
+                setSelecting(undefined)
               })
 
               return canvas?.add(text)
@@ -112,10 +114,10 @@ export default function Home() {
       reader.onloadend = () => {
         FabricImage.fromURL(reader.result as string).then((output) => {
           output.on('selected', (e) => {
-            setSelecting(true)
+            setSelecting(e.target)
           })
           output.on('deselected', () => {
-            setSelecting(false)
+            setSelecting(undefined)
           })
           canvas?.add(output)
         })
@@ -127,7 +129,7 @@ export default function Home() {
   const handleDeleteObject = (canvas: Canvas | null) => {
     const object = canvas?.getActiveObject()!
     canvas?.remove(object)
-    setSelecting(false)
+    setSelecting(undefined)
   }
 
   const handleExportSvg = (canvas: Canvas | null) => {
@@ -148,7 +150,7 @@ export default function Home() {
     a.click()
   }
 
-  const Configuration = (props: { canvas?: Canvas | null }) => {
+  const Configuration = (props: { canvas?: Canvas | null, object?: FabricObject }) => {
     if (!props.canvas?.getActiveObject()) return null
     if (props.canvas?.getActiveObject() instanceof Textbox) {
       return <TextboxComponent canvas={props?.canvas} />
@@ -183,9 +185,9 @@ export default function Home() {
           </li>
           <li className="mt-2">
             <button
-              className={clsx('btn btn-error', !isSelecting && 'btn-disabled')}
+              className={clsx("btn btn-error", !selectedObject && "btn-disabled")}
               role="button"
-              aria-disabled={!isSelecting ? 'true' : 'false'}
+              aria-disabled={!selectedObject ? "true" : "false"}
               onClick={() => {
                 handleDeleteObject(canvas?.current)
               }}
@@ -205,7 +207,7 @@ export default function Home() {
           </li>
         </ul>
         <div className="bg-base-200 rounded-l-lg rounded-r-none mt-2 text-primary w-[200px]">
-          <Configuration canvas={canvas?.current} />
+          <Configuration key={selectedObject?.customId} object={selectedObject} canvas={canvas.current} />
         </div>
       </div>
       <div
@@ -215,5 +217,5 @@ export default function Home() {
         <canvas id="c" />
       </div>
     </div>
-  )
+  );
 }
