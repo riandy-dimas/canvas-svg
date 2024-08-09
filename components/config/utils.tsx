@@ -80,7 +80,7 @@ export const buttonDecorationBuilder = (
     <button
       className={clsx(
         'btn btn-sm join-item',
-        value === props.value ? 'btn-primary' : 'btn-outline',
+        value === props.value ? 'btn-neutral' : 'btn-outline',
       )}
       onClick={() => {
         canvas
@@ -151,7 +151,16 @@ export const fixTspanPosSVGObjImport = ({
 
       return canvas?.add(text)
     }
-    obj && canvas?.add(obj)
+
+    if (obj) {
+      obj.on('selected', (e) => {
+        setSelectedObject(e.target)
+      })
+      obj.on('deselected', () => {
+        setSelectedObject(undefined)
+      })
+      canvas?.add(obj)
+    }
   })
 }
 

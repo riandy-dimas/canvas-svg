@@ -30,6 +30,7 @@ import {
   Download,
 } from 'lucide-react'
 import ImageComponent from '@/components/config/image'
+import OtherComponent from '@/components/config/other'
 
 export default function Home() {
   const [selectedObject, setSelectedObject] = useState<FabricObject>()
@@ -155,6 +156,7 @@ export default function Home() {
               hoverCursor: 'default',
               excludeFromExport: true,
               evented: false,
+              opacity: 0.4,
             },
           ),
         )
@@ -173,6 +175,7 @@ export default function Home() {
               hoverCursor: 'default',
               excludeFromExport: true,
               evented: false,
+              opacity: 0.4,
             },
           ),
         )
@@ -215,6 +218,7 @@ export default function Home() {
   }
 
   const Configuration = (props: { canvas?: Canvas | null }) => {
+    if (!props.canvas?.getActiveObject()) return null
     if (props.canvas?.getActiveObject() instanceof Textbox) {
       return (
         <TextboxComponent
@@ -231,7 +235,12 @@ export default function Home() {
         />
       )
     }
-    return null
+    return (
+      <OtherComponent
+        canvas={props?.canvas}
+        onDelete={() => handleDeleteObject(props.canvas)}
+      />
+    )
   }
 
   return (
@@ -242,7 +251,7 @@ export default function Home() {
             <button
               className={clsx(
                 'btn',
-                isShowGrid ? 'btn-primary' : 'btn-outline',
+                isShowGrid ? 'btn-neutral' : 'btn-outline',
               )}
               onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
             >

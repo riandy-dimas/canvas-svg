@@ -2,12 +2,11 @@ import React from 'react'
 import { Canvas } from 'fabric'
 import { Trash2 } from 'lucide-react'
 
-type ImageComponent = {
+type OtherComponent = {
   canvas?: Canvas | null
   onDelete: () => void
 }
-
-const ImageComponent = (props: ImageComponent) => {
+const OtherComponent = (props: OtherComponent) => {
   return (
     <div className="card bg-base-100 w-full rounded-r-none rounded-l-lg">
       <div className="card-body p-2">
@@ -30,4 +29,4 @@ const ImageComponent = (props: ImageComponent) => {
   )
 }
 
-export default ImageComponent
+export default OtherComponent
