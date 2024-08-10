@@ -250,7 +250,7 @@ export default function Home() {
 
   return (
     <div className="grid grid-cols-[0.25fr_1fr]">
-      <div id="menu">
+      <div id="menu" className="min-w-[180px]">
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
           <li>
             <button
