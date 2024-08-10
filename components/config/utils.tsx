@@ -17,6 +17,8 @@ export const CANVAS_CONFIG = {
   width: 1123,
   renderOnAddRemove: true,
   preserveObjectStacking: true,
+  fontUrl:
+    'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
 }
 
 export const CONTROL_CONFIG = {
@@ -255,5 +257,57 @@ export const initGridSnap = (options: any) => {
         top: h2 - oH2,
       })
       .setCoords()
+  }
+}
+
+/** Font as Base64 related stuffs */
+
+const getEmbeddedFontFromCSS = async (CSSText: string) => {
+  const controller = new AbortController()
+
+  const regex = /https:\/\/[^)]+/g
+  const fontUrls = CSSText.match(regex)
+  const fontLoaderPromises =
+    fontUrls?.map((url) => {
+      return new Promise<void>(async (resolve, reject) => {
+        try {
+          const response = await fetch(url)
+          const fontBlob = await response.blob()
+
+          const reader = new FileReader()
+          reader.addEventListener(
+            'load',
+            () => {
+              // Replace the font url(***) with actual Base64
+              CSSText = CSSText.replace(url, String(reader.result))
+              resolve()
+            },
+            { signal: controller.signal },
+          )
+          reader.readAsDataURL(fontBlob)
+        } catch (e) {
+          reject(`Font fetch error: ${e}`)
+        }
+      })
+    }) || []
+  try {
+    await Promise.all(fontLoaderPromises)
+    controller.abort()
+    return CSSText
+  } catch (e) {
+    throw Promise.reject(e)
+  }
+}
+
+export const getGoogleFontAsBase64 = async (fontHref: string) => {
+  try {
+    if (!fontHref.startsWith('https://fonts.googleapis.com')) {
+      throw new Error('URL is not from Google Font')
+    }
+    const fetchedCSSText = await (await fetch(fontHref)).text()
+    const embeddedFonts = await getEmbeddedFontFromCSS(fetchedCSSText)
+    return embeddedFonts
+  } catch (e) {
+    throw new Error(`Error Load Font`, { cause: e })
   }
 }

@@ -97,6 +97,7 @@ const TextboxComponent = (props: TextboxComponent) => {
           </label>
           <select
             className="select select-bordered w-full join-item"
+            disabled
             value={textBoxProperty['fontFamily']}
             onChange={async (e) => {
               const value = e.target.value
@@ -104,10 +105,7 @@ const TextboxComponent = (props: TextboxComponent) => {
               setTextBoxProperty((state) => ({ ...state, fontFamily: value }))
             }}
           >
-            <option value={'Roboto'}>Roboto</option>
             <option value={'Inter'}>Inter</option>
-            <option value={'Poppins'}>Poppins</option>
-            <option value={'Mooli'}>Mooli</option>
           </select>
         </div>
         <div>

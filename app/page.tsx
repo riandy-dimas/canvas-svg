@@ -20,6 +20,7 @@ import {
   CONTROL_CONFIG,
   initGridSnap,
   fixTspanPosSVGObjImport,
+  getGoogleFontAsBase64,
 } from '@/components/config/utils'
 import { nanoid } from 'nanoid'
 import {
@@ -33,6 +34,7 @@ import ImageComponent from '@/components/config/image'
 import OtherComponent from '@/components/config/other'
 
 export default function Home() {
+  const [isExporting, setExporting] = useState(false)
   const [selectedObject, setSelectedObject] = useState<FabricObject>()
   const [isShowGrid, setIsShowGrid] = useState<boolean>(false)
   const [gridObjects, setGridObjects] = useState<any>(null)
@@ -77,7 +79,7 @@ export default function Home() {
       width: 200,
       fontSize: 20,
       textAlign: 'left',
-      fontFamily: 'Roboto',
+      fontFamily: 'Inter',
       customId: nanoid(),
     })
     text.on('selected', (e) => {
@@ -86,7 +88,7 @@ export default function Home() {
     text.on('deselected', () => {
       setSelectedObject(undefined)
     })
-    await updateFontFamily('Roboto', canvas)
+    await updateFontFamily('Inter', canvas)
 
     canvas?.add(text)
     canvas?.bringObjectToFront(text)
@@ -200,14 +202,15 @@ export default function Home() {
     setIsShowGrid((prev) => !prev)
   }
 
-  const handleExportSvg = (canvas: Canvas | null) => {
+  const handleExportSvg = async (canvas: Canvas | null) => {
     if (!canvas) return
+    setExporting(true)
+    const base64Font = await getGoogleFontAsBase64(CANVAS_CONFIG.fontUrl)
 
-    const fontInjectScript = `<style>@import url('https://fonts.googleapis.com/css2?family=Mooli&amp;family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&amp;family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&amp;display=swap');</style>`
     const svgString = String(canvas.toSVG())
     const injectedSvg = svgString.replace(
       '<defs>',
-      `<defs>\n${fontInjectScript}`,
+      `<defs>\n<style>\n${base64Font}\n</style>`,
     )
     const blob = new Blob([injectedSvg], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
@@ -215,6 +218,7 @@ export default function Home() {
     a.href = url
     a.download = 'file.svg'
     a.click()
+    setExporting(false)
   }
 
   const Configuration = (props: { canvas?: Canvas | null }) => {
@@ -297,8 +301,13 @@ export default function Home() {
               onClick={() => {
                 handleExportSvg(canvas?.current)
               }}
+              disabled={isExporting}
             >
-              <Download size={20} />
+              {isExporting ? (
+                <span className="loading loading-spinner"></span>
+              ) : (
+                <Download size={20} />
+              )}
               Export as SVG
             </button>
           </li>
