@@ -3,6 +3,7 @@ import { Canvas } from 'fabric'
 import {
   buttonDecorationBuilder,
   fontDecoration,
+  getFontList,
   updateFontFamily,
 } from './utils'
 import { Trash2 } from 'lucide-react'
@@ -104,10 +105,9 @@ const TextboxComponent = (props: TextboxComponent) => {
               setTextBoxProperty((state) => ({ ...state, fontFamily: value }))
             }}
           >
-            <option value={'Roboto'}>Roboto</option>
-            <option value={'Inter'}>Inter</option>
-            <option value={'Poppins'}>Poppins</option>
-            <option value={'Mooli'}>Mooli</option>
+            {(getFontList() || []).map((value, index) => (
+              <option key={index}>{value}</option>
+            ))}
           </select>
         </div>
         <div>
