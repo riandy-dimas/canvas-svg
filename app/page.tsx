@@ -312,7 +312,7 @@ export default function Home() {
             </button>
           </li>
         </ul>
-        <div className="bg-base-200 rounded-l-lg rounded-r-none mt-2 text-primary w-[200px]">
+        <div className="bg-base-200 rounded-l-lg rounded-r-none mt-2 text-primary">
           <Configuration
             key={selectedObject?.customId}
             canvas={canvas?.current}
