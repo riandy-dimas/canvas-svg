@@ -206,10 +206,8 @@ export default function Home() {
 
   const handleExportSvg = async (canvas: Canvas | null) => {
     if (!canvas) return
-    console.log(getFontList())
     setExporting(true)
     const base64Font = await getGoogleFontAsBase64(CANVAS_CONFIG.fontUrl)
-
     const svgString = String(canvas.toSVG())
     const injectedSvg = svgString.replace(
       '<defs>',
