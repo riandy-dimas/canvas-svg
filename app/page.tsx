@@ -21,6 +21,7 @@ import {
   initGridSnap,
   fixTspanPosSVGObjImport,
   getGoogleFontAsBase64,
+  getFontList,
 } from '@/components/config/utils'
 import { nanoid } from 'nanoid'
 import {
@@ -72,6 +73,7 @@ export default function Home() {
 
   const handleAddText = async (canvas: Canvas | null) => {
     canvas?.discardActiveObject()
+    const defaultFont = getFontList()?.[0]
     const text = new Textbox('New text', {
       snapAngle: CONTROL_CONFIG.snapAngle,
       snapThreshold: CONTROL_CONFIG.snapThreshold,
@@ -79,7 +81,7 @@ export default function Home() {
       width: 200,
       fontSize: 20,
       textAlign: 'left',
-      fontFamily: 'Inter',
+      fontFamily: defaultFont,
       customId: nanoid(),
     })
     text.on('selected', (e) => {
@@ -88,7 +90,7 @@ export default function Home() {
     text.on('deselected', () => {
       setSelectedObject(undefined)
     })
-    await updateFontFamily('Inter', canvas)
+    await updateFontFamily(defaultFont, canvas)
 
     canvas?.add(text)
     canvas?.bringObjectToFront(text)
@@ -204,6 +206,7 @@ export default function Home() {
 
   const handleExportSvg = async (canvas: Canvas | null) => {
     if (!canvas) return
+    console.log(getFontList())
     setExporting(true)
     const base64Font = await getGoogleFontAsBase64(CANVAS_CONFIG.fontUrl)
 
