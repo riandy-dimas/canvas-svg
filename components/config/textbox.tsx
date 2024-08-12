@@ -105,6 +105,7 @@ const TextboxComponent = (props: TextboxComponent) => {
               setTextBoxProperty((state) => ({ ...state, fontFamily: value }))
             }}
           >
+            <option value="Times New Roman">Times New Roman</option>
             {(getFontList() || []).map((value, index) => (
               <option key={index}>{value}</option>
             ))}
