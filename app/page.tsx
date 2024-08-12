@@ -17,28 +17,20 @@ import {
   CONTROL_CONFIG,
   initGridSnap,
   fixTspanPosSVGObjImport,
-  useCanvasHistory,
+  useCanvasHistoryStack,
 } from '@/components/config/utils'
 
 export default function Home() {
   const [isSelecting, setSelecting] = useState<boolean>(false)
   const [isShowGrid, setIsShowGrid] = useState<boolean>(false)
   const [gridObjects, setGridObjects] = useState<any>(null)
-  const [historyStack, setHistoryStack] = useState<any>([])
-  const [stackCursor, setStackCursor] = useState<number>(0)
 
   const canvas = useRef<Canvas | null>(null)
-
-  const saveState = (newState: any) => {
-    const state = newState.toJSON()
-    setHistoryStack((prev) => [...prev, state])
-    setStackCursor((prev) => prev + 1)
-
-    console.log(historyStack)
-  }
+  const { undo, redo, stackCursor, historyStack } = useCanvasHistoryStack(
+    canvas.current,
+  )
 
   useEffect(() => {
-    console.log('re-render')
     canvas.current = initCanvas()
 
     // init grid snap
@@ -49,16 +41,9 @@ export default function Home() {
       }
     })
 
-    // canvas.current.on('object:added', () => {
-    //   saveState(canvas.current)
-    // })
-
-    canvas.current.on('object:modified', () => {
-      saveState(canvas.current)
-    })
-
-    // canvas.current.on('object:removed', () => {
-    //   saveState(canvas.current)
+    // // TODO: look for another event, current only record state if the object is modified
+    // canvas.current.on('object:modified', () => {
+    //   updateState(canvas.current)
     // })
 
     return () => {
@@ -216,31 +201,6 @@ export default function Home() {
     return null
   }
 
-  const undo = async (canvas: Canvas | null) => {
-    if (!canvas) return
-    if (stackCursor === 0) return
-
-    setStackCursor((prev) => prev - 1)
-
-    console.log(historyStack[stackCursor - 1])
-
-    // canvas.clear()
-    await canvas.loadFromJSON(historyStack[stackCursor - 1])
-    await canvas?.renderAll()
-    // canvas?.
-  }
-
-  const redo = async (canvas: Canvas | null) => {
-    if (!canvas) return
-    if (stackCursor === historyStack.length) return
-
-    setStackCursor((prev) => prev + 1)
-
-    // canvas.clear()
-    await canvas.loadFromJSON(historyStack[stackCursor + 1])
-    await canvas?.renderAll()
-  }
-
   return (
     <div className="grid grid-cols-[0.25fr_1fr]">
       <div id="menu">
@@ -254,25 +214,28 @@ export default function Home() {
             </button>
             <button
               className="btn btn-outline"
-              onClick={() => undo(canvas?.current)}
-              disabled={stackCursor === 0}
+              onClick={() => undo()}
+              disabled={stackCursor < 0}
             >
               {`<`}
             </button>
             <button
               className="btn btn-outline"
-              onClick={() => redo(canvas?.current)}
-              disabled={stackCursor === historyStack.length - 1}
+              onClick={() => redo()}
+              disabled={stackCursor === historyStack?.length - 1}
             >
               {`>`}
             </button>
+          </li>
+          <li className="flex flex-row items-center justify-between mb-4">
+            stack cursor index: {stackCursor}
           </li>
           <li>
             <button
               className="btn btn-outline"
               onClick={() => handleAddText(canvas?.current)}
             >
-              Add Text {stackCursor}
+              Add Text
             </button>
           </li>
           <li>

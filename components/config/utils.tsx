@@ -9,7 +9,7 @@ import {
   Underline,
 } from 'lucide-react'
 import FontFaceObserver from 'fontfaceobserver'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export const CANVAS_CONFIG = {
   height: 794,
@@ -239,48 +239,78 @@ export const initGridSnap = (options: any) => {
   }
 }
 
-export const useCanvasHistory = (
-  canvas: Canvas | null,
-  historyStack: any,
-  historyIndex: any,
-  setHistoryStack: any,
-  setHistoryIndex: any,
-) => {
-  const saveState = (newState: any) => {
-    const state = JSON.stringify(newState)
+export const useCanvasHistoryStack = (canvas: Canvas | null) => {
+  const [historyStack, setHistoryStack] = useState<any>([])
+  const [stackCursor, setStackCursor] = useState<number>(-1)
 
-    setHistoryStack((prev: any) => [...prev, state])
-    setHistoryIndex(historyIndex + 1)
+  useEffect(() => {
+    canvas?.on('object:modified', () => {
+      saveState(canvas, false)
+    })
+  }, [canvas])
+
+  useEffect(() => {
+    const isUndoState = stackCursor < historyStack.length - 1
+
+    isUndoState && saveState(canvas, true)
+  }, [historyStack])
+
+  const saveState = (newCanvas: Canvas | null, shouldClearFuture?: boolean) => {
+    if (!newCanvas) return
+    const state = newCanvas.toJSON()
+
+    console.log(shouldClearFuture)
+
+    setHistoryStack((prev: any) => {
+      if (shouldClearFuture) {
+        const newStack = prev.slice(0, stackCursor + 1)
+        return [...newStack, state]
+      } else {
+        return [...prev, state]
+      }
+    })
+
+    setStackCursor((prev) => {
+      if (shouldClearFuture) {
+        return stackCursor + 1
+      } else {
+        return prev + 1
+      }
+    })
   }
 
-  const undo = () => {
-    if (!canvas) return
-    if (historyIndex === 0) return
+  const undo = async () => {
+    if (!canvas || stackCursor < 0) return
+    if (stackCursor === 0) {
+      await canvas.clear()
+      setStackCursor(-1)
+      return
+    }
 
-    setHistoryIndex(historyIndex - 1)
+    const undoState = historyStack[stackCursor - 1]
+    if (undoState) {
+      await canvas.loadFromJSON(historyStack[stackCursor - 1])
+      await canvas?.renderAll()
 
-    console.log(historyIndex)
-
-    // canvas.clear()
-    // canvas.loadFromJSON(historyStack[historyIndex - 1])
-    // canvas?.renderAll()
+      setStackCursor((prev) => prev - 1)
+    }
   }
 
-  const redo = () => {
-    if (!canvas) return
-    if (historyIndex === historyStack.length) return
+  const redo = async () => {
+    if (!canvas || stackCursor >= historyStack.length - 1) return
 
-    setHistoryIndex(historyIndex + 1)
-
-    // canvas.clear()
-    canvas.loadFromJSON(historyStack[historyIndex + 1], () =>
-      canvas?.renderAll(),
-    )
+    const redoState = historyStack[stackCursor + 1]
+    if (redoState) {
+      await canvas.loadFromJSON(redoState)
+      await canvas.renderAll()
+      setStackCursor((prev) => prev + 1)
+    }
   }
 
   return {
-    saveState,
     undo,
     redo,
+    stackCursor,
+    historyStack,
   }
 }
