@@ -8,6 +8,9 @@ import {
   loadSVGFromString,
   Line,
   Group,
+  FabricObject,
+  BasicTransformEvent,
+  TPointerEvent,
 } from 'fabric'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import TextboxComponent from '@/components/config/textbox'
@@ -17,76 +20,103 @@ import {
   CONTROL_CONFIG,
   initGridSnap,
   fixTspanPosSVGObjImport,
-  useCanvasHistoryStack,
+  getGoogleFontAsBase64,
+  getFontList,
 } from '@/components/config/utils'
+import { nanoid } from 'nanoid'
+import {
+  Image,
+  Grid2x2Check,
+  Grid2x2X,
+  TypeOutline,
+  Download,
+} from 'lucide-react'
+import ImageComponent from '@/components/config/image'
+import OtherComponent from '@/components/config/other'
+import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
 
 export default function Home() {
-  const [isSelecting, setSelecting] = useState<boolean>(false)
+  const [isExporting, setExporting] = useState(false)
+  const [selectedObject, setSelectedObject] = useState<FabricObject>()
   const [isShowGrid, setIsShowGrid] = useState<boolean>(false)
   const [gridObjects, setGridObjects] = useState<any>(null)
 
   const canvas = useRef<Canvas | null>(null)
-  const { undo, redo, stackCursor, historyStack } = useCanvasHistoryStack(
-    canvas.current,
-  )
+  const { undo, redo, stackCursor, historyStack, saveState } =
+    useCanvasHistoryStack(canvas.current)
 
   useEffect(() => {
     canvas.current = initCanvas()
 
-    // init grid snap
-    canvas.current.on('object:moving', (options) => {
-      // snap edges
-      if (CONTROL_CONFIG.snap) {
-        initGridSnap(options)
-      }
+    canvas.current?.on('object:modified', () => {
+      saveState(canvas.current, false)
     })
 
-    // // TODO: look for another event, current only record state if the object is modified
-    // canvas.current.on('object:modified', () => {
-    //   updateState(canvas.current)
-    // })
-
     return () => {
+      canvas.current?.off('object:modified')
       canvas.current?.dispose()
       canvas.current = null
     }
   }, [])
 
+  useEffect(() => {
+    const handler = (
+      options: BasicTransformEvent<TPointerEvent> & {
+        target: FabricObject
+      },
+    ) => {
+      if (CONTROL_CONFIG.snap && isShowGrid) {
+        initGridSnap(options)
+      }
+    }
+
+    canvas.current?.on('object:moving', handler)
+
+    return () => {
+      canvas.current?.off('object:moving', handler)
+    }
+  }, [isShowGrid])
+
   const initCanvas = () => new Canvas('c', CANVAS_CONFIG)
 
   const handleAddText = async (canvas: Canvas | null) => {
+    canvas?.discardActiveObject()
+    const defaultFont = getFontList()?.[0]
     const text = new Textbox('New text', {
-      snapAngle: 45,
-      snapThreshold: 1,
+      snapAngle: CONTROL_CONFIG.snapAngle,
+      snapThreshold: CONTROL_CONFIG.snapThreshold,
       editable: true,
       width: 200,
       fontSize: 20,
       textAlign: 'left',
-      fontFamily: 'Roboto',
+      fontFamily: defaultFont,
+      customId: nanoid(),
     })
     text.on('selected', (e) => {
-      setSelecting(true)
+      setSelectedObject(e.target)
     })
     text.on('deselected', () => {
-      setSelecting(false)
+      setSelectedObject(undefined)
     })
-    await updateFontFamily('Roboto', canvas)
+    await updateFontFamily(defaultFont, canvas)
 
     canvas?.add(text)
     canvas?.bringObjectToFront(text)
+    canvas?.setActiveObject(text)
   }
 
   const handleAddImage = (
     e: ChangeEvent<HTMLInputElement>,
     canvas: Canvas | null,
   ) => {
+    canvas?.discardActiveObject()
     if (!e?.target?.files?.[0]) return
     // if file is svg then load it as svg string
     if (e.target.files[0].type === 'image/svg+xml') {
       const reader = new FileReader()
       reader.onloadend = () => {
         loadSVGFromString(reader.result as string).then((output) => {
-          fixTspanPosSVGObjImport({ output, setSelecting, canvas })
+          fixTspanPosSVGObjImport({ output, setSelectedObject, canvas })
         })
       }
       reader.readAsText(e.target.files[0])
@@ -94,24 +124,29 @@ export default function Home() {
     } else {
       const reader = new FileReader()
       reader.onloadend = () => {
-        FabricImage.fromURL(reader.result as string).then((output) => {
+        FabricImage.fromURL(reader.result as string, undefined, {
+          customId: nanoid(),
+          snapAngle: CONTROL_CONFIG.snapAngle,
+          snapThreshold: CONTROL_CONFIG.snapThreshold,
+        }).then((output) => {
           output.on('selected', (e) => {
-            setSelecting(true)
+            setSelectedObject(e.target)
           })
           output.on('deselected', () => {
-            setSelecting(false)
+            setSelectedObject(undefined)
           })
           canvas?.add(output)
+          canvas?.setActiveObject(output)
         })
       }
       reader.readAsDataURL(e.target.files[0])
     }
   }
 
-  const handleDeleteObject = (canvas: Canvas | null) => {
+  const handleDeleteObject = (canvas?: Canvas | null) => {
     const object = canvas?.getActiveObject()!
     canvas?.remove(object)
-    setSelecting(false)
+    setSelectedObject(undefined)
   }
 
   const toggleGrid = (canvas: Canvas | null, show: boolean) => {
@@ -133,6 +168,7 @@ export default function Home() {
               hoverCursor: 'default',
               excludeFromExport: true,
               evented: false,
+              opacity: 0.4,
             },
           ),
         )
@@ -151,6 +187,7 @@ export default function Home() {
               hoverCursor: 'default',
               excludeFromExport: true,
               evented: false,
+              opacity: 0.4,
             },
           ),
         )
@@ -175,15 +212,14 @@ export default function Home() {
     setIsShowGrid((prev) => !prev)
   }
 
-  const handleExportSvg = (canvas: Canvas | null) => {
+  const handleExportSvg = async (canvas: Canvas | null) => {
     if (!canvas) return
-
-    const fontInjectScript = `<style>@import url('https://fonts.googleapis.com/css2?family=Mooli&amp;family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&amp;display=swap');</style>`
-
+    setExporting(true)
+    const base64Font = await getGoogleFontAsBase64(CANVAS_CONFIG.fontUrl)
     const svgString = String(canvas.toSVG())
     const injectedSvg = svgString.replace(
       '<defs>',
-      `<defs>\n${fontInjectScript}`,
+      `<defs>\n<style>\n${base64Font}\n</style>`,
     )
     const blob = new Blob([injectedSvg], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
@@ -191,27 +227,43 @@ export default function Home() {
     a.href = url
     a.download = 'file.svg'
     a.click()
+    setExporting(false)
   }
 
   const Configuration = (props: { canvas?: Canvas | null }) => {
     if (!props.canvas?.getActiveObject()) return null
     if (props.canvas?.getActiveObject() instanceof Textbox) {
-      return <TextboxComponent canvas={props?.canvas} />
+      return (
+        <TextboxComponent
+          canvas={props?.canvas}
+          onDelete={() => handleDeleteObject(props.canvas)}
+        />
+      )
     }
-    return null
+    if (props.canvas?.getActiveObject() instanceof FabricImage) {
+      return (
+        <ImageComponent
+          canvas={props?.canvas}
+          onDelete={() => handleDeleteObject(props.canvas)}
+        />
+      )
+    }
+    return (
+      <OtherComponent
+        canvas={props?.canvas}
+        onDelete={() => handleDeleteObject(props.canvas)}
+      />
+    )
   }
 
   return (
     <div className="grid grid-cols-[0.25fr_1fr]">
-      <div id="menu">
-        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
+      <div id="menu" className="min-w-[180px]">
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
           <li className="flex flex-row items-center justify-between mb-4">
-            <button
-              className={`btn ${isShowGrid ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
-            >
-              #
-            </button>
+            <li className="flex flex-row items-center justify-between mb-4">
+              stack cursor index: {stackCursor}
+            </li>
             <button
               className="btn btn-outline"
               onClick={() => undo()}
@@ -227,15 +279,29 @@ export default function Home() {
               {`>`}
             </button>
           </li>
+        </ul>
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
           <li className="flex flex-row items-center justify-between mb-4">
-            stack cursor index: {stackCursor}
+            <button
+              className={clsx(
+                'btn',
+                isShowGrid ? 'btn-neutral' : 'btn-outline',
+              )}
+              onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
+            >
+              {isShowGrid ? <Grid2x2Check size={20} /> : <Grid2x2X size={20} />}
+              Grid Layouting
+            </button>
           </li>
+        </ul>
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
           <li>
             <button
               className="btn btn-outline"
               onClick={() => handleAddText(canvas?.current)}
             >
-              Add Text
+              <TypeOutline size={20} />
+              Text
             </button>
           </li>
           <li>
@@ -247,35 +313,40 @@ export default function Home() {
               className="hidden"
               placeholder="Add image"
             />
-            <label className="btn btn-outline" htmlFor="inputImage">
-              Import Image (.png,.jpg,.svg)
-            </label>
-          </li>
-          <li className="mt-2">
-            <button
-              className={clsx('btn btn-error', !isSelecting && 'btn-disabled')}
-              role="button"
-              aria-disabled={!isSelecting ? 'true' : 'false'}
-              onClick={() => {
-                handleDeleteObject(canvas?.current)
-              }}
+            <div
+              className="tooltip p-0"
+              data-tip="Accept .png, .jpeg/.jpg, .svg"
             >
-              Delete Element
-            </button>
+              <label className="btn btn-outline btn-block" htmlFor="inputImage">
+                <Image size={20} />
+                Image
+              </label>
+            </div>
           </li>
+        </ul>
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
           <li>
             <button
               className="btn btn-info"
               onClick={() => {
                 handleExportSvg(canvas?.current)
               }}
+              disabled={isExporting}
             >
-              Export SVG
+              {isExporting ? (
+                <span className="loading loading-spinner"></span>
+              ) : (
+                <Download size={20} />
+              )}
+              Export as SVG
             </button>
           </li>
         </ul>
-        <div className="bg-base-200 rounded-l-lg rounded-r-none mt-2 text-primary w-[200px]">
-          <Configuration canvas={canvas?.current} />
+        <div className="bg-base-200 rounded-l-lg rounded-r-none mt-2 text-primary">
+          <Configuration
+            key={selectedObject?.customId}
+            canvas={canvas?.current}
+          />
         </div>
       </div>
       <div

@@ -26,26 +26,33 @@
   }
 }
 
-@font-face {
-  font-family: "Mooli";
+/* @font-face {
+  font-family: 'Mooli';
   font-weight: 400;
-  src: url("./fonts/Mooli-Regular.ttf") format("truetype");
+  src: url('./fonts/Mooli-Regular.ttf') format('truetype');
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Roboto";
+  font-family: 'Inter';
   font-weight: 400;
-  src: url("./fonts/Roboto-Regular.ttf") format("truetype");
+  src: url('./fonts/Inter-Regular.ttf') format('truetype');
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Poppins";
+  font-family: 'Roboto';
   font-weight: 400;
-  src: url("./fonts/Poppins-Regular.ttf") format("truetype");
+  src: url('./fonts/Roboto-Regular.ttf') format('truetype');
   font-display: swap;
 }
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 400;
+  src: url('./fonts/Poppins-Regular.ttf') format('truetype');
+  font-display: swap;
+} */
 
 body {
   color: rgb(var(--foreground-rgb));

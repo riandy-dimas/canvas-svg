@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Canvas, Textbox } from 'fabric'
+import { Canvas, FabricObject, Textbox } from 'fabric'
 import {
   AlignCenter,
   AlignLeft,
@@ -9,19 +9,23 @@ import {
   Underline,
 } from 'lucide-react'
 import FontFaceObserver from 'fontfaceobserver'
-import { useCallback, useEffect, useState } from 'react'
+import { nanoid } from 'nanoid'
+import { SVGParsingOutput } from '@/types'
 
 export const CANVAS_CONFIG = {
   height: 794,
   width: 1123,
   renderOnAddRemove: true,
   preserveObjectStacking: true,
+  fontUrl:
+    'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap',
 }
 
 export const CONTROL_CONFIG = {
   grid: 40,
   snap: true,
-  snapThreshold: 10,
+  snapThreshold: 3,
+  snapAngle: 45,
 }
 
 export const fontDecoration = {
@@ -78,7 +82,7 @@ export const buttonDecorationBuilder = (
     <button
       className={clsx(
         'btn btn-sm join-item',
-        value === props.value ? 'btn-primary' : 'btn-outline',
+        value === props.value ? 'btn-neutral' : 'btn-outline',
       )}
       onClick={() => {
         canvas
@@ -94,9 +98,10 @@ export const buttonDecorationBuilder = (
 }
 
 export const updateFontFamily = async (
-  font: string,
+  font?: string,
   canvas?: Canvas | null,
 ) => {
+  if (!font) return
   var myfont = new FontFaceObserver(font)
   await myfont.load()
   if (!canvas) return
@@ -105,12 +110,18 @@ export const updateFontFamily = async (
   canvas.requestRenderAll()
 }
 
-// @ts-expect-error; TODO: define types properly
-export const fixTspanPosSVGObjImport = ({ output, setSelecting, canvas }) => {
+export const fixTspanPosSVGObjImport = ({
+  output,
+  setSelectedObject,
+  canvas,
+}: {
+  output: SVGParsingOutput
+  setSelectedObject: (object?: FabricObject) => void
+  canvas?: Canvas | null
+}) => {
   const { objects, elements } = output
-  // @ts-expect-error; TODO: define tspan types properly
   objects.forEach((obj, index) => {
-    if (obj && obj.type === 'text') {
+    if (obj && obj instanceof Textbox) {
       const currentElement = elements[index]
       if (
         currentElement.children.length > 0 &&
@@ -118,6 +129,7 @@ export const fixTspanPosSVGObjImport = ({ output, setSelecting, canvas }) => {
       ) {
         const tspan = currentElement.children[0]
 
+        // @ts-expect-error
         const { x, y } = tspan.attributes
 
         // THE FIX: Update x and y position of text object
@@ -127,21 +139,31 @@ export const fixTspanPosSVGObjImport = ({ output, setSelecting, canvas }) => {
 
       const text = new Textbox(obj.text, {
         ...obj,
-        snapAngle: 45,
-        snapThreshold: 1,
+        snapAngle: CONTROL_CONFIG.snapAngle,
+        snapThreshold: CONTROL_CONFIG.snapThreshold,
         editable: true,
+        customId: nanoid(),
       })
 
-      text.on('selected', () => {
-        setSelecting(true)
+      text.on('selected', (e) => {
+        setSelectedObject(e.target)
       })
       text.on('deselected', () => {
-        setSelecting(false)
+        setSelectedObject(undefined)
       })
 
       return canvas?.add(text)
     }
-    obj && canvas?.add(obj)
+
+    if (obj) {
+      obj.on('selected', (e) => {
+        setSelectedObject(e.target)
+      })
+      obj.on('deselected', () => {
+        setSelectedObject(undefined)
+      })
+      canvas?.add(obj)
+    }
   })
 }
 
@@ -239,78 +261,59 @@ export const initGridSnap = (options: any) => {
   }
 }
 
-export const useCanvasHistoryStack = (canvas: Canvas | null) => {
-  const [historyStack, setHistoryStack] = useState<any>([])
-  const [stackCursor, setStackCursor] = useState<number>(-1)
+export const getFontList = () => {
+  const regex = /family=([^:]+)/g
+  return CANVAS_CONFIG.fontUrl.match(regex)?.map((value) => value.split('=')[1])
+}
 
-  useEffect(() => {
-    canvas?.on('object:modified', () => {
-      saveState(canvas, false)
-    })
-  }, [canvas])
+/** Font as Base64 related stuffs */
 
-  useEffect(() => {
-    const isUndoState = stackCursor < historyStack.length - 1
+const getEmbeddedFontFromCSS = async (CSSText: string) => {
+  const controller = new AbortController()
 
-    isUndoState && saveState(canvas, true)
-  }, [historyStack])
+  const regex = /https:\/\/[^)]+/g
+  const fontUrls = CSSText.match(regex)
+  const fontLoaderPromises =
+    fontUrls?.map((url) => {
+      return new Promise<void>(async (resolve, reject) => {
+        try {
+          const response = await fetch(url)
+          const fontBlob = await response.blob()
 
-  const saveState = (newCanvas: Canvas | null, shouldClearFuture?: boolean) => {
-    if (!newCanvas) return
-    const state = newCanvas.toJSON()
-
-    console.log(shouldClearFuture)
-
-    setHistoryStack((prev: any) => {
-      if (shouldClearFuture) {
-        const newStack = prev.slice(0, stackCursor + 1)
-        return [...newStack, state]
-      } else {
-        return [...prev, state]
-      }
-    })
-
-    setStackCursor((prev) => {
-      if (shouldClearFuture) {
-        return stackCursor + 1
-      } else {
-        return prev + 1
-      }
-    })
+          const reader = new FileReader()
+          reader.addEventListener(
+            'load',
+            () => {
+              // Replace the font url(***) with actual Base64
+              CSSText = CSSText.replace(url, String(reader.result))
+              resolve()
+            },
+            { signal: controller.signal },
+          )
+          reader.readAsDataURL(fontBlob)
+        } catch (e) {
+          reject(`Font fetch error: ${e}`)
+        }
+      })
+    }) || []
+  try {
+    await Promise.all(fontLoaderPromises)
+    controller.abort()
+    return CSSText
+  } catch (e) {
+    throw Promise.reject(e)
   }
+}
 
-  const undo = async () => {
-    if (!canvas || stackCursor < 0) return
-    if (stackCursor === 0) {
-      await canvas.clear()
-      setStackCursor(-1)
-      return
+export const getGoogleFontAsBase64 = async (fontHref: string) => {
+  try {
+    if (!fontHref.startsWith('https://fonts.googleapis.com')) {
+      throw new Error('URL is not from Google Font')
     }
-
-    const undoState = historyStack[stackCursor - 1]
-    if (undoState) {
-      await canvas.loadFromJSON(historyStack[stackCursor - 1])
-      await canvas?.renderAll()
-
-      setStackCursor((prev) => prev - 1)
-    }
-  }
-
-  const redo = async () => {
-    if (!canvas || stackCursor >= historyStack.length - 1) return
-
-    const redoState = historyStack[stackCursor + 1]
-    if (redoState) {
-      await canvas.loadFromJSON(redoState)
-      await canvas.renderAll()
-      setStackCursor((prev) => prev + 1)
-    }
-  }
-
-  return {
-    undo,
-    redo,
-    stackCursor,
-    historyStack,
+    const fetchedCSSText = await (await fetch(fontHref)).text()
+    const embeddedFonts = await getEmbeddedFontFromCSS(fetchedCSSText)
+    return embeddedFonts
+  } catch (e) {
+    throw new Error(`Error Load Font`, { cause: e })
   }
 }
