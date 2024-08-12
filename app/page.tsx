@@ -34,6 +34,8 @@ import {
 import ImageComponent from '@/components/config/image'
 import OtherComponent from '@/components/config/other'
 import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
+import { useKeystrokeListener } from '@/components/config/hooks/useKeystrokeListener'
+import { useCutCopyPaste } from '@/components/config/hooks/useCutCopyPaste'
 
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
@@ -44,6 +46,7 @@ export default function Home() {
   const canvas = useRef<Canvas | null>(null)
   const { undo, redo, stackCursor, historyStack, saveState } =
     useCanvasHistoryStack(canvas.current)
+  const { cut, copy, paste, duplicate } = useCutCopyPaste(canvas.current)
 
   useEffect(() => {
     canvas.current = initCanvas()
@@ -143,6 +146,7 @@ export default function Home() {
     const object = canvas?.getActiveObject()!
     canvas?.remove(object)
     setSelectedObject(undefined)
+    saveState(canvas, false)
   }
 
   const toggleGrid = (canvas: Canvas | null, show: boolean) => {
@@ -251,6 +255,16 @@ export default function Home() {
       />
     )
   }
+
+  useKeystrokeListener(canvas.current, {
+    'control+z': undo,
+    'control+shift+z': redo,
+    'control+c': copy,
+    'control+x': cut,
+    'control+v': paste,
+    'control+d': duplicate,
+    delete: handleDeleteObject,
+  })
 
   return (
     <div className="grid grid-cols-[0.25fr_1fr]">

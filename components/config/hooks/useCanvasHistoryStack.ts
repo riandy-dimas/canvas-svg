@@ -11,11 +11,12 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     isUndoState && saveState(canvas, true)
   }, [historyStack])
 
-  const saveState = (newCanvas: Canvas | null, shouldClearFuture?: boolean) => {
+  const saveState = (
+    newCanvas: Canvas | null | undefined,
+    shouldClearFuture?: boolean,
+  ) => {
     if (!newCanvas) return
     const state = newCanvas.toJSON()
-
-    console.log(shouldClearFuture)
 
     setHistoryStack((prev: any) => {
       if (shouldClearFuture) {
