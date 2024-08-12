@@ -33,6 +33,7 @@ import {
 } from 'lucide-react'
 import ImageComponent from '@/components/config/image'
 import OtherComponent from '@/components/config/other'
+import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
 
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
@@ -41,11 +42,18 @@ export default function Home() {
   const [gridObjects, setGridObjects] = useState<any>(null)
 
   const canvas = useRef<Canvas | null>(null)
+  const { undo, redo, stackCursor, historyStack, saveState } =
+    useCanvasHistoryStack(canvas.current)
 
   useEffect(() => {
     canvas.current = initCanvas()
 
+    canvas.current?.on('object:modified', () => {
+      saveState(canvas.current, false)
+    })
+
     return () => {
+      canvas.current?.off('object:modified')
       canvas.current?.dispose()
       canvas.current = null
     }
@@ -251,8 +259,27 @@ export default function Home() {
   return (
     <div className="grid grid-cols-[0.25fr_1fr]">
       <div id="menu" className="min-w-[180px]">
-        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
-          <li>
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
+          <li className="flex flex-row items-center justify-between mb-4">
+            stack cursor index: {stackCursor}
+            <button
+              className="btn btn-outline"
+              onClick={() => undo()}
+              disabled={stackCursor < 0}
+            >
+              {`<`}
+            </button>
+            <button
+              className="btn btn-outline"
+              onClick={() => redo()}
+              disabled={stackCursor === historyStack?.length - 1}
+            >
+              {`>`}
+            </button>
+          </li>
+        </ul>
+        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
+          <li className="flex flex-row items-center justify-between mb-4">
             <button
               className={clsx(
                 'btn',
