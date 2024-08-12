@@ -81,15 +81,12 @@ export default function Home() {
 
   const handleAddText = async (canvas: Canvas | null) => {
     canvas?.discardActiveObject()
-    const defaultFont = getFontList()?.[0]
     const text = new Textbox('New text', {
       snapAngle: CONTROL_CONFIG.snapAngle,
       snapThreshold: CONTROL_CONFIG.snapThreshold,
       editable: true,
       width: 200,
-      fontSize: 20,
       textAlign: 'left',
-      fontFamily: defaultFont,
       customId: nanoid(),
     })
     text.on('selected', (e) => {
@@ -98,7 +95,6 @@ export default function Home() {
     text.on('deselected', () => {
       setSelectedObject(undefined)
     })
-    await updateFontFamily(defaultFont, canvas)
 
     canvas?.add(text)
     canvas?.bringObjectToFront(text)
