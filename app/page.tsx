@@ -261,9 +261,7 @@ export default function Home() {
       <div id="menu" className="min-w-[180px]">
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
           <li className="flex flex-row items-center justify-between mb-4">
-            <li className="flex flex-row items-center justify-between mb-4">
-              stack cursor index: {stackCursor}
-            </li>
+            stack cursor index: {stackCursor}
             <button
               className="btn btn-outline"
               onClick={() => undo()}
