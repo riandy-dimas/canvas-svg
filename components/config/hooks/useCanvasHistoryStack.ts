@@ -1,34 +1,54 @@
 import { Canvas } from 'fabric'
 import { useState, useEffect } from 'react'
+import { useLocalStorage } from './useLocalStorage'
 
 export const useCanvasHistoryStack = (canvas: Canvas | null) => {
+  const GLOBAL_SNAPSHOT_LS_KEY = 'CANVAS_SVG_GLOBAL_SNAPSHOT'
   const [pageStackSnapshot, setPageStackSnapshot] = useState<any>([])
   const [historyStack, setHistoryStack] = useState<any>([])
   const [stackCursor, setStackCursor] = useState<number>(-1)
+  const [currentWorkingPage, setCurrentWorkingPage] = useState<number>(0)
+  const { setLocalStorage, getLocalStorage } = useLocalStorage()
 
   useEffect(() => {
     if (!canvas) return
     if (!historyStack) {
-      //   saveState(canvas)
       return
     }
     const isUndoState = stackCursor < historyStack.length - 1
 
-    isUndoState && saveState(canvas, true)
+    isUndoState && saveState(canvas, currentWorkingPage, true)
   }, [historyStack])
 
-  const saveState = (
+  const loadSnapshotFromLocalStorage = async () => {
+    const snapshot = getLocalStorage(GLOBAL_SNAPSHOT_LS_KEY)
+
+    if (snapshot) {
+      const firstSnapshot = snapshot[0]
+      await setPageStackSnapshot(snapshot)
+      await setStackCursor(firstSnapshot.stackCursor)
+      await setHistoryStack(firstSnapshot.snapshots)
+    }
+  }
+
+  const saveState = async (
     newCanvas: Canvas | null | undefined,
+    activePage: number,
     shouldClearFuture?: boolean,
   ) => {
     if (!newCanvas) return
-    const state = newCanvas.toJSON()
+    setCurrentWorkingPage(activePage)
+    const state = await newCanvas.toJSON()
 
     setHistoryStack((prev: any) => {
       if (shouldClearFuture) {
         const newStack = prev.slice(0, stackCursor + 1)
+        console.log(activePage)
+
+        updatePageStackSnapshot(activePage, [...newStack, state])
         return [...newStack, state]
       } else {
+        updatePageStackSnapshot(activePage, [...prev, state])
         return [...prev, state]
       }
     })
@@ -40,6 +60,8 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
         return prev + 1
       }
     })
+
+    // force update pageStackSnapshot
   }
 
   const undo = async () => {
@@ -70,8 +92,18 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     }
   }
 
-  const onPageChange = async (oldPageIndex: number, newPageIndex: number) => {
+  const updateTabHistoryStack = async (
+    oldPageIndex: number,
+    newPageIndex: number,
+  ) => {
     const currentSnapshotList = JSON.parse(JSON.stringify(pageStackSnapshot))
+
+    if (!currentSnapshotList[oldPageIndex]) {
+      currentSnapshotList[oldPageIndex] = {
+        stackCursor,
+        snapshots: historyStack,
+      }
+    }
 
     const beforeChangeStackSnapshot = {
       stackCursor,
@@ -93,12 +125,38 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     }
   }
 
+  const updatePageStackSnapshot = async (
+    pageIndex: number,
+    newHistoryStack: any,
+  ) => {
+    const currentSnapshotList = JSON.parse(JSON.stringify(pageStackSnapshot))
+
+    currentSnapshotList[pageIndex] = {
+      stackCursor: newHistoryStack.length - 1,
+      snapshots: newHistoryStack,
+    }
+
+    await setPageStackSnapshot(currentSnapshotList)
+    await setLocalStorage(GLOBAL_SNAPSHOT_LS_KEY, currentSnapshotList)
+  }
+
+  const deletePageStackSnapshot = async (pageIndex: number) => {
+    const currentSnapshotList = JSON.parse(JSON.stringify(pageStackSnapshot))
+
+    currentSnapshotList.splice(pageIndex, 1)
+
+    await setPageStackSnapshot(currentSnapshotList)
+    await setLocalStorage(GLOBAL_SNAPSHOT_LS_KEY, currentSnapshotList)
+  }
+
   return {
     saveState,
     undo,
     redo,
     stackCursor,
     historyStack,
-    onPageChange,
+    updateTabHistoryStack,
+    loadSnapshotFromLocalStorage,
+    deletePageStackSnapshot,
   }
 }
