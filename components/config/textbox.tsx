@@ -5,7 +5,7 @@ import {
   fontDecoration,
   getFontList,
   updateFontFamily,
-} from './utils'
+} from '@/utils'
 import { Trash2 } from 'lucide-react'
 
 type TextboxComponent = { canvas?: Canvas | null; onDelete: () => void }

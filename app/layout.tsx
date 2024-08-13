@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { CANVAS_CONFIG } from '@/components/config/utils'
+import { CANVAS_CONFIG } from '@/utils'
 
 const inter = Inter({ subsets: ['latin'] })
 

@@ -20,7 +20,7 @@ import {
   initGridSnap,
   fixTspanPosSVGObjImport,
   getGoogleFontAsBase64,
-} from '@/components/config/utils'
+} from '@/utils'
 import { nanoid } from 'nanoid'
 import {
   Image,
