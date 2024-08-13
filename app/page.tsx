@@ -31,11 +31,11 @@ import {
 } from 'lucide-react'
 import ImageComponent from '@/components/config/image'
 import OtherComponent from '@/components/config/other'
-import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
-import { useCutCopyPaste } from '@/components/config/hooks/useCutCopyPaste'
+import { useCanvasHistoryStack } from '@/hooks/useCanvasHistoryStack'
+import { useCutCopyPaste } from '@/hooks/useCutCopyPaste'
 import React from 'react'
-import { useLocalStorage } from '@/components/config/hooks/useLocalStorage'
-import useHotKey from '@/components/config/hooks/useHotkey'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+import useHotKey from '@/hooks/useHotkey'
 
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
