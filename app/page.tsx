@@ -13,7 +13,7 @@ import {
   TPointerEvent,
 } from 'fabric'
 import { ChangeEvent, Fragment, useEffect, useRef, useState } from 'react'
-import TextboxComponent from '@/components/config/textbox'
+import TextboxComponent from '@/components/textbox'
 import {
   CANVAS_CONFIG,
   CONTROL_CONFIG,
@@ -29,8 +29,8 @@ import {
   TypeOutline,
   Download,
 } from 'lucide-react'
-import ImageComponent from '@/components/config/image'
-import OtherComponent from '@/components/config/other'
+import ImageComponent from '@/components/image'
+import OtherComponent from '@/components/other'
 import { useCanvasHistoryStack } from '@/hooks/useCanvasHistoryStack'
 import { useCutCopyPaste } from '@/hooks/useCutCopyPaste'
 import React from 'react'
