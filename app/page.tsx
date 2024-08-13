@@ -411,7 +411,7 @@ export default function Home() {
           <li className="flex flex-row items-center justify-between mb-4">
             <button
               className={clsx(
-                'btn',
+                'btn btn-block',
                 isShowGrid ? 'btn-neutral' : 'btn-outline',
               )}
               onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
@@ -440,15 +440,15 @@ export default function Home() {
               className="hidden"
               placeholder="Add image"
             />
-            <div
-              className="tooltip p-0"
-              data-tip="Accept .png, .jpeg/.jpg, .svg"
-            >
-              <label className="btn btn-outline btn-block" htmlFor="inputImage">
+            <label className="btn btn-outline btn-block" htmlFor="inputImage">
+              <div
+                className="tooltip p-0 flex items-center justify-center gap-2 w-full h-full"
+                data-tip="Accept .png, .jpeg/.jpg, .svg"
+              >
                 <Image size={20} />
                 Image
-              </label>
-            </div>
+              </div>
+            </label>
           </li>
         </ul>
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
