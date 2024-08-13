@@ -481,7 +481,7 @@ export default function Home() {
           />
         </div>
       </div>
-      <div role="tablist" className="tabs tabs-lifted mt-[-35px]">
+      <div role="tablist" className="tabs tabs-lifted mt-[-32px]">
         {canvasTabObject.map((tab: any, index: number) => (
           <Fragment key={`tab_control_${index}`}>
             <a
@@ -508,7 +508,7 @@ export default function Home() {
             <div
               key={`tab_content_${index}`}
               role="tabpanel"
-              className="tab-content bg-white"
+              className="tab-content bg-white w-fit border-none mt-0"
             >
               <div
                 style={{
