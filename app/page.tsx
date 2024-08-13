@@ -44,23 +44,35 @@ export default function Home() {
   const [gridObjects, setGridObjects] = useState<any>(null)
 
   const canvas = useRef<Canvas | null>(null)
-  const { undo, redo, stackCursor, historyStack, saveState } =
+  const { undo, redo, stackCursor, historyStack, saveState, onPageChange } =
     useCanvasHistoryStack(canvas.current)
   const { cut, copy, paste, duplicate } = useCutCopyPaste(canvas.current)
+  const [activeTab, setActiveTab] = useState<number>(-1)
+  const [initialMount, setInitialMount] = useState<boolean>(true)
+  const [canvasTabObject, setCanvasTabObject] = useState<any>([
+    {
+      id: 'page_one',
+      canvasObj: {
+        version: '6.1.0',
+        objects: [],
+      },
+    },
+  ])
 
   useEffect(() => {
-    canvas.current = initCanvas()
-
-    canvas.current?.on('object:modified', () => {
-      saveState(canvas.current, false)
-    })
-
+    // initial mount hack
+    if (initialMount) {
+      setActiveTab(0)
+      setInitialMount(false)
+    } else {
+      initializeCanvas()
+    }
     return () => {
       canvas.current?.off('object:modified')
       canvas.current?.dispose()
       canvas.current = null
     }
-  }, [])
+  }, [activeTab])
 
   useEffect(() => {
     const handler = (
@@ -80,7 +92,19 @@ export default function Home() {
     }
   }, [isShowGrid])
 
-  const initCanvas = () => new Canvas('c', CANVAS_CONFIG)
+  const initNewCanvasWithTab = (id: string) => new Canvas(id, CANVAS_CONFIG)
+  const initializeCanvas = async () => {
+    canvas.current = await initNewCanvasWithTab(canvasTabObject[activeTab]?.id)
+
+    if (canvasTabObject[activeTab]?.canvasObj) {
+      await canvas.current?.loadFromJSON(canvasTabObject[activeTab].canvasObj)
+      await canvas.current?.renderAll()
+    }
+
+    canvas.current?.on('object:modified', () => {
+      saveState(canvas.current, false)
+    })
+  }
 
   const handleAddText = async (canvas: Canvas | null) => {
     canvas?.discardActiveObject()
@@ -266,6 +290,51 @@ export default function Home() {
     delete: handleDeleteObject,
   })
 
+  const handleAddNewPage = async () => {
+    const newId = nanoid()
+    setCanvasTabObject([
+      ...canvasTabObject,
+      {
+        id: newId,
+        canvasObj: await initNewCanvasWithTab(newId).toJSON(),
+      },
+    ])
+    handleActiveTabChange(canvasTabObject.length)
+  }
+
+  const handleActiveTabChange = async (index: number) => {
+    const currentCanvasObj = await canvas.current?.toJSON()
+
+    if (currentCanvasObj) {
+      await setCanvasTabObject((prev: any) => {
+        const newTabObject = [...prev]
+        newTabObject[activeTab].canvasObj = currentCanvasObj
+        return newTabObject
+      })
+    }
+
+    await setActiveTab(index)
+    await onPageChange(activeTab, index)
+  }
+
+  const handleCloseTab = async (index: number) => {
+    if (index === 0) return
+
+    const newTabObject = [...canvasTabObject]
+    newTabObject.splice(index, 1)
+    await setCanvasTabObject(newTabObject)
+
+    if (activeTab === index) {
+      await onPageChange(activeTab, index - 1)
+      await setActiveTab(index - 1)
+    }
+
+    if (activeTab > index) {
+      await onPageChange(activeTab, activeTab - 1)
+      await setActiveTab(activeTab - 1)
+    }
+  }
+
   return (
     <div className="grid grid-cols-[0.25fr_1fr]">
       <div id="menu" className="min-w-[180px]">
@@ -286,6 +355,7 @@ export default function Home() {
             >
               {`>`}
             </button>
+            {/* <button onClick={() => handleDeletePage(0)}>kill page one</button> */}
           </li>
         </ul>
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
@@ -357,11 +427,70 @@ export default function Home() {
           />
         </div>
       </div>
-      <div
-        style={{ width: '297mm', height: '210mm', background: 'white' }}
-        id="canvas"
-      >
-        <canvas id="c" />
+      <div role="tablist" className="tabs tabs-lifted mt-[-35px]">
+        {canvasTabObject.map((tab: any, index: number) => (
+          <>
+            <a
+              key={`tab_control_${index}`}
+              role="tab"
+              className={`tab bg-white ${activeTab === index && 'tab-active'}`}
+              onClick={() => handleActiveTabChange(index)}
+            >
+              <div className="flex flex-row items-center">
+                {`Page ${index + 1}`}
+
+                {index !== 0 && index === activeTab && (
+                  <button
+                    className="ml-4 hover:bg-white rounded-md gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleCloseTab(index)
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      className="inline-block h-4 w-4 stroke-current"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </a>
+            <div
+              key={`tab_content_${index}`}
+              role="tabpanel"
+              className="tab-content bg-white"
+            >
+              <div
+                style={{
+                  width: '297mm',
+                  height: '210mm',
+                  background: 'white',
+                }}
+                id={`canvas-${index}`}
+              >
+                <canvas id={tab.id} />
+              </div>
+            </div>
+          </>
+        ))}
+        <input
+          type="radio"
+          name="canvas_tab_new"
+          role="tab"
+          className="tab bg-white"
+          id="add_new_page"
+          aria-label="+"
+          onClick={handleAddNewPage}
+        />
       </div>
     </div>
   )
