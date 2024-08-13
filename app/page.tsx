@@ -36,6 +36,8 @@ import OtherComponent from '@/components/config/other'
 import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
 import { useKeystrokeListener } from '@/components/config/hooks/useKeystrokeListener'
 import { useCutCopyPaste } from '@/components/config/hooks/useCutCopyPaste'
+import React from 'react'
+import { useLocalStorage } from '@/components/config/hooks/useLocalStorage'
 
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
@@ -43,10 +45,6 @@ export default function Home() {
   const [isShowGrid, setIsShowGrid] = useState<boolean>(false)
   const [gridObjects, setGridObjects] = useState<any>(null)
 
-  const canvas = useRef<Canvas | null>(null)
-  const { undo, redo, stackCursor, historyStack, saveState, onPageChange } =
-    useCanvasHistoryStack(canvas.current)
-  const { cut, copy, paste, duplicate } = useCutCopyPaste(canvas.current)
   const [activeTab, setActiveTab] = useState<number>(-1)
   const [initialMount, setInitialMount] = useState<boolean>(true)
   const [canvasTabObject, setCanvasTabObject] = useState<any>([
@@ -59,11 +57,26 @@ export default function Home() {
     },
   ])
 
+  const canvas = useRef<Canvas | null>(null)
+  const {
+    undo,
+    redo,
+    stackCursor,
+    historyStack,
+    saveState,
+    updateTabHistoryStack,
+    loadSnapshotFromLocalStorage,
+    deletePageStackSnapshot,
+  } = useCanvasHistoryStack(canvas.current)
+  const { cut, copy, paste, duplicate } = useCutCopyPaste(canvas.current)
+  const { getLocalStorage } = useLocalStorage()
+
   useEffect(() => {
     // initial mount hack
     if (initialMount) {
       setActiveTab(0)
       setInitialMount(false)
+      initializeCanvasFromLocalStorageSnapshot()
     } else {
       initializeCanvas()
     }
@@ -102,8 +115,32 @@ export default function Home() {
     }
 
     canvas.current?.on('object:modified', () => {
-      saveState(canvas.current, false)
+      saveState(canvas.current, activeTab, false)
     })
+  }
+  const initializeCanvasFromLocalStorageSnapshot = async () => {
+    const GLOBAL_SNAPSHOT = getLocalStorage('CANVAS_SVG_GLOBAL_SNAPSHOT')
+    if (GLOBAL_SNAPSHOT) {
+      const firstSnapshot = GLOBAL_SNAPSHOT[0]
+      const canvasObjFromSnapshot =
+        firstSnapshot.snapshots[firstSnapshot.stackCursor]
+
+      const canvasTabObjFromSnapshot = GLOBAL_SNAPSHOT.map(
+        (snapshot: any, index: number) => {
+          return {
+            id: index === 0 ? 'page_one' : nanoid(),
+            canvasObj: snapshot.snapshots[snapshot.stackCursor],
+          }
+        },
+      )
+      await setActiveTab(0)
+
+      await canvas.current?.loadFromJSON(canvasObjFromSnapshot)
+      await setCanvasTabObject(canvasTabObjFromSnapshot)
+      await updateTabHistoryStack(0, 0)
+
+      await loadSnapshotFromLocalStorage()
+    }
   }
 
   const handleAddText = async (canvas: Canvas | null) => {
@@ -170,7 +207,7 @@ export default function Home() {
     const object = canvas?.getActiveObject()!
     canvas?.remove(object)
     setSelectedObject(undefined)
-    saveState(canvas, false)
+    saveState(canvas, activeTab, false)
   }
 
   const toggleGrid = (canvas: Canvas | null, show: boolean) => {
@@ -224,7 +261,6 @@ export default function Home() {
         excludeFromExport: true,
       })
       setGridObjects(gridObj)
-      // console.log(gridObj)
       !!canvas && canvas?.add(gridObj)
     } else {
       if (gridObjects) {
@@ -236,21 +272,32 @@ export default function Home() {
     setIsShowGrid((prev) => !prev)
   }
 
-  const handleExportSvg = async (canvas: Canvas | null) => {
+  const handleExportSvg = async () => {
     if (!canvas) return
     setExporting(true)
-    const base64Font = await getGoogleFontAsBase64(CANVAS_CONFIG.fontUrl)
-    const svgString = String(canvas.toSVG())
-    const injectedSvg = svgString.replace(
-      '<defs>',
-      `<defs>\n<style>\n${base64Font}\n</style>`,
-    )
-    const blob = new Blob([injectedSvg], { type: 'image/svg+xml' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'file.svg'
-    a.click()
+    for (let i in canvasTabObject) {
+      const canvasExportInstance = new Canvas('export', CANVAS_CONFIG)
+      const base64Font = await getGoogleFontAsBase64(CANVAS_CONFIG.fontUrl)
+
+      const canvasObjJsonRAW = canvasTabObject[i].canvasObj
+      const canvasObj =
+        await canvasExportInstance.loadFromJSON(canvasObjJsonRAW)
+
+      const svgString = String(canvasObj.toSVG())
+      const injectedSvg = svgString.replace(
+        '<defs>',
+        `<defs>\n<style>\n${base64Font}\n</style>`,
+      )
+      const blob = new Blob([injectedSvg], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `page_${Number(i) + 1}.svg`
+      a.click()
+
+      canvasExportInstance.dispose()
+    }
+
     setExporting(false)
   }
 
@@ -314,7 +361,7 @@ export default function Home() {
     }
 
     await setActiveTab(index)
-    await onPageChange(activeTab, index)
+    await updateTabHistoryStack(activeTab, index)
   }
 
   const handleCloseTab = async (index: number) => {
@@ -325,18 +372,24 @@ export default function Home() {
     await setCanvasTabObject(newTabObject)
 
     if (activeTab === index) {
-      await onPageChange(activeTab, index - 1)
+      await updateTabHistoryStack(activeTab, index - 1)
       await setActiveTab(index - 1)
     }
 
     if (activeTab > index) {
-      await onPageChange(activeTab, activeTab - 1)
+      await updateTabHistoryStack(activeTab, activeTab - 1)
       await setActiveTab(activeTab - 1)
     }
+
+    deletePageStackSnapshot(index)
   }
 
   return (
     <div className="grid grid-cols-[0.25fr_1fr]">
+      {/* for export */}
+      <div className="hidden">
+        <canvas id="export" className="hidden" />
+      </div>
       <div id="menu" className="min-w-[180px]">
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
           <li className="flex flex-row items-center justify-between mb-4">
@@ -429,7 +482,7 @@ export default function Home() {
       </div>
       <div role="tablist" className="tabs tabs-lifted mt-[-35px]">
         {canvasTabObject.map((tab: any, index: number) => (
-          <>
+          <React.Fragment key={`main_tab-${tab.id}`}>
             <a
               key={`tab_control_${index}`}
               role="tab"
@@ -480,7 +533,7 @@ export default function Home() {
                 <canvas id={tab.id} />
               </div>
             </div>
-          </>
+          </React.Fragment>
         ))}
         <input
           type="radio"
