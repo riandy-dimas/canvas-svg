@@ -14,6 +14,7 @@
     "fabricjs-react": "^2.0.0",
     "fontfaceobserver": "^2.3.0",
     "lucide-react": "^0.424.0",
+    "lz-string": "^1.5.0",
     "nanoid": "^5.0.7",
     "next": "14.2.5",
     "prettier": "^3.3.3",

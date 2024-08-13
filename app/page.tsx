@@ -125,7 +125,7 @@ export default function Home() {
     })
   }
   const initializeCanvasFromLocalStorageSnapshot = async () => {
-    const GLOBAL_SNAPSHOT = getLocalStorage('CANVAS_SVG_GLOBAL_SNAPSHOT')
+    const GLOBAL_SNAPSHOT = await getLocalStorage('CANVAS_SVG_GLOBAL_SNAPSHOT')
     if (GLOBAL_SNAPSHOT) {
       const firstSnapshot = GLOBAL_SNAPSHOT[0]
       const canvasObjFromSnapshot =
