@@ -31,6 +31,8 @@ import {
   RotateCcw,
   Undo2,
   Redo2,
+  X,
+  Plus,
 } from 'lucide-react'
 import ImageComponent from '@/components/image'
 import OtherComponent from '@/components/other'
@@ -484,7 +486,7 @@ export default function Home() {
           <Fragment key={`tab_control_${index}`}>
             <a
               role="tab"
-              className={`tab bg-white ${activeTab === index && 'tab-active'}`}
+              className={`tab !px-2 bg-white ${activeTab === index && 'tab-active'}`}
               onClick={() => handleActiveTabChange(index)}
             >
               <div className="flex flex-row items-center">
@@ -492,25 +494,13 @@ export default function Home() {
 
                 {index !== 0 && index === activeTab && (
                   <button
-                    className="ml-4 hover:bg-white rounded-md gap-2"
+                    className="ml-1 btn btn-ghost btn-xs"
                     onClick={(e) => {
                       e.stopPropagation()
                       handleCloseTab(index)
                     }}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      className="inline-block h-4 w-4 stroke-current"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      ></path>
-                    </svg>
+                    <X size={10} />
                   </button>
                 )}
               </div>
@@ -533,15 +523,16 @@ export default function Home() {
             </div>
           </Fragment>
         ))}
-        <input
-          type="radio"
-          name="canvas_tab_new"
+        <a
           role="tab"
-          className="tab bg-white"
-          id="add_new_page"
-          aria-label="+"
+          className="tab bg-white h-[32px] !p-0"
           onClick={handleAddNewPage}
-        />
+        >
+          <button className="btn no-animation btn-neutral btn-xs h-full w-full rounded-b-none">
+            <Plus size={14} />
+            Add Page
+          </button>
+        </a>
       </div>
     </div>
   )
