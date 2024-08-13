@@ -120,6 +120,7 @@ export default function Home() {
     }
 
     canvas.current?.on('object:modified', () => {
+      // TODO: should update canvasTabObj also, current tab object only updated when tab changed
       saveState(canvas.current, activeTab, false)
     })
   }
