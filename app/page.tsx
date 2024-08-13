@@ -15,13 +15,11 @@ import {
 import { ChangeEvent, Fragment, useEffect, useRef, useState } from 'react'
 import TextboxComponent from '@/components/config/textbox'
 import {
-  updateFontFamily,
   CANVAS_CONFIG,
   CONTROL_CONFIG,
   initGridSnap,
   fixTspanPosSVGObjImport,
   getGoogleFontAsBase64,
-  getFontList,
 } from '@/components/config/utils'
 import { nanoid } from 'nanoid'
 import {
@@ -35,7 +33,7 @@ import ImageComponent from '@/components/config/image'
 import OtherComponent from '@/components/config/other'
 import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
 import { useCutCopyPaste } from '@/components/config/hooks/useCutCopyPaste'
-import { useHotkeys } from 'react-hotkeys-hook'
+import useHotKey from '@/components/config/hooks/useHotkey'
 
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
@@ -59,14 +57,13 @@ export default function Home() {
     },
   ])
 
-  useHotkeys(['meta+z', 'ctrl+z'], undo)
-  useHotkeys(['meta+shift+z', 'ctrl+shift+z'], redo)
-  useHotkeys(['meta+c', 'ctrl+c'], copy)
-  useHotkeys(['meta+x', 'ctrl+x'], cut)
-  useHotkeys(['meta+v', 'ctrl+v'], paste)
-  useHotkeys(['meta+d', 'ctrl+d'], duplicate)
-  useHotkeys(['meta+d', 'ctrl+d'], duplicate)
-  useHotkeys('delete', () => handleDeleteObject(canvas.current))
+  useHotKey('mod+z', undo)
+  useHotKey('mod+shift+z', redo)
+  useHotKey('mod+c', copy)
+  useHotKey('mod+x', cut)
+  useHotKey('mod+v', paste)
+  useHotKey('mod+d', duplicate)
+  useHotKey('delete', () => handleDeleteObject(canvas.current))
 
   useEffect(() => {
     // initial mount hack
