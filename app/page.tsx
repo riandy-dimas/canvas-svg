@@ -59,13 +59,13 @@ export default function Home() {
     },
   ])
 
-  useHotkeys('meta+z', undo)
-  useHotkeys('meta+shift+z', redo)
-  useHotkeys('meta+c', copy)
-  useHotkeys('meta+x', cut)
-  useHotkeys('meta+v', paste)
-  useHotkeys('meta+d', duplicate)
-  useHotkeys('meta+d', duplicate)
+  useHotkeys(['meta+z', 'ctrl+z'], undo)
+  useHotkeys(['meta+shift+z', 'ctrl+shift+z'], redo)
+  useHotkeys(['meta+c', 'ctrl+c'], copy)
+  useHotkeys(['meta+x', 'ctrl+x'], cut)
+  useHotkeys(['meta+v', 'ctrl+v'], paste)
+  useHotkeys(['meta+d', 'ctrl+d'], duplicate)
+  useHotkeys(['meta+d', 'ctrl+d'], duplicate)
   useHotkeys('delete', () => handleDeleteObject(canvas.current))
 
   useEffect(() => {
