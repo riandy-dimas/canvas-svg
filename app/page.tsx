@@ -44,7 +44,7 @@ export default function Home() {
   const [gridObjects, setGridObjects] = useState<any>(null)
 
   const canvas = useRef<Canvas | null>(null)
-  const { undo, redo, stackCursor, historyStack, saveState } =
+  const { undo, redo, stackCursor, historyStack, saveState, onPageChange } =
     useCanvasHistoryStack(canvas.current)
   const { cut, copy, paste, duplicate } = useCutCopyPaste(canvas.current)
   const [activeTab, setActiveTab] = useState<number>(-1)
@@ -303,17 +303,36 @@ export default function Home() {
   }
 
   const handleActiveTabChange = async (index: number) => {
-    console.log(canvas.current?.toJSON())
-
     const currentCanvasObj = await canvas.current?.toJSON()
-    await setCanvasTabObject((prev: any) => {
-      const newTabObject = [...prev]
-      newTabObject[activeTab].canvasObj = currentCanvasObj
-      return newTabObject
-    })
+
+    if (currentCanvasObj) {
+      await setCanvasTabObject((prev: any) => {
+        const newTabObject = [...prev]
+        newTabObject[activeTab].canvasObj = currentCanvasObj
+        return newTabObject
+      })
+    }
 
     await setActiveTab(index)
-    await canvas.current?.renderAll()
+    await onPageChange(activeTab, index)
+  }
+
+  const handleCloseTab = async (index: number) => {
+    if (index === 0) return
+
+    const newTabObject = [...canvasTabObject]
+    newTabObject.splice(index, 1)
+    await setCanvasTabObject(newTabObject)
+
+    if (activeTab === index) {
+      await onPageChange(activeTab, index - 1)
+      await setActiveTab(index - 1)
+    }
+
+    if (activeTab > index) {
+      await onPageChange(activeTab, activeTab - 1)
+      await setActiveTab(activeTab - 1)
+    }
   }
 
   return (
@@ -411,17 +430,40 @@ export default function Home() {
       <div role="tablist" className="tabs tabs-lifted mt-[-35px]">
         {canvasTabObject.map((tab: any, index: number) => (
           <>
-            <input
+            <a
               key={`tab_control_${index}`}
-              type="radio"
-              name={`canvas_tab_${index}`}
               role="tab"
               className={`tab bg-white ${activeTab === index && 'tab-active'}`}
-              aria-label={`Page ${index + 1}`}
-              defaultChecked={activeTab === index}
-              checked={activeTab === index}
-              onChange={() => handleActiveTabChange(index)}
-            />
+              onClick={() => handleActiveTabChange(index)}
+            >
+              <div className="flex flex-row items-center">
+                {`Page ${index + 1}`}
+
+                {index !== 0 && index === activeTab && (
+                  <button
+                    className="ml-4 hover:bg-white rounded-md gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleCloseTab(index)
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      className="inline-block h-4 w-4 stroke-current"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </a>
             <div
               key={`tab_content_${index}`}
               role="tabpanel"

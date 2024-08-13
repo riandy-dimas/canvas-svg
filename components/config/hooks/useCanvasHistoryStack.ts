@@ -2,10 +2,16 @@ import { Canvas } from 'fabric'
 import { useState, useEffect } from 'react'
 
 export const useCanvasHistoryStack = (canvas: Canvas | null) => {
+  const [pageStackSnapshot, setPageStackSnapshot] = useState<any>([])
   const [historyStack, setHistoryStack] = useState<any>([])
   const [stackCursor, setStackCursor] = useState<number>(-1)
 
   useEffect(() => {
+    if (!canvas) return
+    if (!historyStack) {
+      //   saveState(canvas)
+      return
+    }
     const isUndoState = stackCursor < historyStack.length - 1
 
     isUndoState && saveState(canvas, true)
@@ -64,11 +70,35 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     }
   }
 
+  const onPageChange = async (oldPageIndex: number, newPageIndex: number) => {
+    const currentSnapshotList = JSON.parse(JSON.stringify(pageStackSnapshot))
+
+    const beforeChangeStackSnapshot = {
+      stackCursor,
+      snapshots: historyStack,
+    }
+
+    const loadedSnapshot =
+      currentSnapshotList[newPageIndex] &&
+      JSON.parse(JSON.stringify(currentSnapshotList[newPageIndex]))
+    currentSnapshotList[oldPageIndex] = beforeChangeStackSnapshot
+
+    await setPageStackSnapshot(currentSnapshotList)
+
+    if (loadedSnapshot) {
+      await setStackCursor(loadedSnapshot.stackCursor)
+      await setHistoryStack(loadedSnapshot.snapshots)
+
+      await canvas?.renderAll()
+    }
+  }
+
   return {
     saveState,
     undo,
     redo,
     stackCursor,
     historyStack,
+    onPageChange,
   }
 }
