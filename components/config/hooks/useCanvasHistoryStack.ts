@@ -21,7 +21,7 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
   }, [historyStack])
 
   const loadSnapshotFromLocalStorage = async () => {
-    const snapshot = getLocalStorage(GLOBAL_SNAPSHOT_LS_KEY)
+    const snapshot = await getLocalStorage(GLOBAL_SNAPSHOT_LS_KEY)
 
     if (snapshot) {
       const firstSnapshot = snapshot[0]
@@ -30,6 +30,18 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
       await setHistoryStack(firstSnapshot.snapshots)
     }
   }
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      setLocalStorage(GLOBAL_SNAPSHOT_LS_KEY, pageStackSnapshot)
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [pageStackSnapshot])
 
   const saveState = async (
     newCanvas: Canvas | null | undefined,
@@ -43,8 +55,6 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     setHistoryStack((prev: any) => {
       if (shouldClearFuture) {
         const newStack = prev.slice(0, stackCursor + 1)
-        console.log(activePage)
-
         updatePageStackSnapshot(activePage, [...newStack, state])
         return [...newStack, state]
       } else {
@@ -60,8 +70,6 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
         return prev + 1
       }
     })
-
-    // force update pageStackSnapshot
   }
 
   const undo = async () => {
@@ -137,7 +145,6 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     }
 
     await setPageStackSnapshot(currentSnapshotList)
-    await setLocalStorage(GLOBAL_SNAPSHOT_LS_KEY, currentSnapshotList)
   }
 
   const deletePageStackSnapshot = async (pageIndex: number) => {
@@ -146,7 +153,6 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     currentSnapshotList.splice(pageIndex, 1)
 
     await setPageStackSnapshot(currentSnapshotList)
-    await setLocalStorage(GLOBAL_SNAPSHOT_LS_KEY, currentSnapshotList)
   }
 
   return {
