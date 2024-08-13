@@ -9,13 +9,12 @@ export default function useHotKey(
   return useHotkeys(keys, callback, {
     ...options,
     enabled: (k, h) => {
-      return (
-        isMacOs &&
-        !k.ctrlKey &&
-        (typeof options?.enabled === 'boolean'
+      const isEnabled =
+        typeof options?.enabled === 'boolean'
           ? options.enabled
-          : options?.enabled?.(k, h) || true)
-      )
+          : (options?.enabled?.(k, h) ?? true)
+      if (!isMacOs) return isEnabled
+      return !k.ctrlKey && isEnabled
     },
   })
 }
