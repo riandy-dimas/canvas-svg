@@ -12,16 +12,14 @@ import {
   BasicTransformEvent,
   TPointerEvent,
 } from 'fabric'
-import { ChangeEvent, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, Fragment, useEffect, useRef, useState } from 'react'
 import TextboxComponent from '@/components/config/textbox'
 import {
-  updateFontFamily,
   CANVAS_CONFIG,
   CONTROL_CONFIG,
   initGridSnap,
   fixTspanPosSVGObjImport,
   getGoogleFontAsBase64,
-  getFontList,
 } from '@/components/config/utils'
 import { nanoid } from 'nanoid'
 import {
@@ -34,10 +32,10 @@ import {
 import ImageComponent from '@/components/config/image'
 import OtherComponent from '@/components/config/other'
 import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
-import { useKeystrokeListener } from '@/components/config/hooks/useKeystrokeListener'
 import { useCutCopyPaste } from '@/components/config/hooks/useCutCopyPaste'
 import React from 'react'
 import { useLocalStorage } from '@/components/config/hooks/useLocalStorage'
+import useHotKey from '@/components/config/hooks/useHotkey'
 
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
@@ -70,6 +68,13 @@ export default function Home() {
   } = useCanvasHistoryStack(canvas.current)
   const { cut, copy, paste, duplicate } = useCutCopyPaste(canvas.current)
   const { getLocalStorage } = useLocalStorage()
+  useHotKey('mod+z', undo)
+  useHotKey('mod+shift+z', redo)
+  useHotKey('mod+c', copy)
+  useHotKey('mod+x', cut)
+  useHotKey('mod+v', paste)
+  useHotKey('mod+d', duplicate)
+  useHotKey('delete', () => handleDeleteObject(canvas.current))
 
   useEffect(() => {
     // initial mount hack
@@ -327,16 +332,6 @@ export default function Home() {
     )
   }
 
-  useKeystrokeListener(canvas.current, {
-    'control+z': undo,
-    'control+shift+z': redo,
-    'control+c': copy,
-    'control+x': cut,
-    'control+v': paste,
-    'control+d': duplicate,
-    delete: handleDeleteObject,
-  })
-
   const handleAddNewPage = async () => {
     const newId = nanoid()
     setCanvasTabObject([
@@ -460,7 +455,7 @@ export default function Home() {
             <button
               className="btn btn-info"
               onClick={() => {
-                handleExportSvg(canvas?.current)
+                handleExportSvg()
               }}
               disabled={isExporting}
             >
@@ -482,9 +477,8 @@ export default function Home() {
       </div>
       <div role="tablist" className="tabs tabs-lifted mt-[-35px]">
         {canvasTabObject.map((tab: any, index: number) => (
-          <React.Fragment key={`main_tab-${tab.id}`}>
+          <Fragment key={`tab_control_${index}`}>
             <a
-              key={`tab_control_${index}`}
               role="tab"
               className={`tab bg-white ${activeTab === index && 'tab-active'}`}
               onClick={() => handleActiveTabChange(index)}
@@ -533,7 +527,7 @@ export default function Home() {
                 <canvas id={tab.id} />
               </div>
             </div>
-          </React.Fragment>
+          </Fragment>
         ))}
         <input
           type="radio"
