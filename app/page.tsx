@@ -13,14 +13,14 @@ import {
   TPointerEvent,
 } from 'fabric'
 import { ChangeEvent, Fragment, useEffect, useRef, useState } from 'react'
-import TextboxComponent from '@/components/config/textbox'
+import TextboxComponent from '@/components/textbox'
 import {
   CANVAS_CONFIG,
   CONTROL_CONFIG,
   initGridSnap,
   fixTspanPosSVGObjImport,
   getGoogleFontAsBase64,
-} from '@/components/config/utils'
+} from '@/utils'
 import { nanoid } from 'nanoid'
 import {
   Image,
@@ -28,14 +28,17 @@ import {
   Grid2x2X,
   TypeOutline,
   Download,
+  RotateCcw,
+  Undo2,
+  Redo2,
 } from 'lucide-react'
-import ImageComponent from '@/components/config/image'
-import OtherComponent from '@/components/config/other'
-import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
-import { useCutCopyPaste } from '@/components/config/hooks/useCutCopyPaste'
+import ImageComponent from '@/components/image'
+import OtherComponent from '@/components/other'
+import { useCanvasHistoryStack } from '@/hooks/useCanvasHistoryStack'
+import { useCutCopyPaste } from '@/hooks/useCutCopyPaste'
 import React from 'react'
-import { useLocalStorage } from '@/components/config/hooks/useLocalStorage'
-import useHotKey from '@/components/config/hooks/useHotkey'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+import useHotKey from '@/hooks/useHotkey'
 
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
@@ -387,31 +390,11 @@ export default function Home() {
         <canvas id="export" className="hidden" />
       </div>
       <div id="menu" className="min-w-[180px]">
-        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
-          <li className="flex flex-row items-center justify-between mb-4">
-            stack cursor index: {stackCursor}
-            <button
-              className="btn btn-outline"
-              onClick={() => undo()}
-              disabled={stackCursor < 0}
-            >
-              {`<`}
-            </button>
-            <button
-              className="btn btn-outline"
-              onClick={() => redo()}
-              disabled={stackCursor === historyStack?.length - 1}
-            >
-              {`>`}
-            </button>
-            {/* <button onClick={() => handleDeletePage(0)}>kill page one</button> */}
-          </li>
-        </ul>
-        <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1 mb-4">
-          <li className="flex flex-row items-center justify-between mb-4">
+        <ul className="div p-2 flex flex-col bg-base-200 rounded-lg rounded-r-none gap-1">
+          <li className="flex flex-row items-center justify-between">
             <button
               className={clsx(
-                'btn',
+                'btn btn-block',
                 isShowGrid ? 'btn-neutral' : 'btn-outline',
               )}
               onClick={() => toggleGrid(canvas?.current, !isShowGrid)}
@@ -419,6 +402,26 @@ export default function Home() {
               {isShowGrid ? <Grid2x2Check size={20} /> : <Grid2x2X size={20} />}
               Grid Layouting
             </button>
+          </li>
+          <li>
+            <div className="join grid grid-flow-col">
+              <button
+                className="btn btn-outline join-item"
+                onClick={() => undo()}
+                disabled={stackCursor < 0}
+              >
+                <Undo2 size={20} />
+                Undo
+              </button>
+              <button
+                className="btn btn-outline join-item"
+                onClick={() => redo()}
+                disabled={stackCursor === historyStack?.length - 1}
+              >
+                <Redo2 size={20} />
+                Redo
+              </button>
+            </div>
           </li>
         </ul>
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
@@ -440,15 +443,15 @@ export default function Home() {
               className="hidden"
               placeholder="Add image"
             />
-            <div
-              className="tooltip p-0"
-              data-tip="Accept .png, .jpeg/.jpg, .svg"
-            >
-              <label className="btn btn-outline btn-block" htmlFor="inputImage">
+            <label className="btn btn-outline btn-block" htmlFor="inputImage">
+              <div
+                className="tooltip p-0 flex items-center justify-center gap-2 w-full h-full"
+                data-tip="Accept .png, .jpeg/.jpg, .svg"
+              >
                 <Image size={20} />
                 Image
-              </label>
-            </div>
+              </div>
+            </label>
           </li>
         </ul>
         <ul className="menu bg-base-200 rounded-lg rounded-r-none gap-1">
