@@ -12,7 +12,7 @@ import {
   BasicTransformEvent,
   TPointerEvent,
 } from 'fabric'
-import { ChangeEvent, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, Fragment, useEffect, useRef, useState } from 'react'
 import TextboxComponent from '@/components/config/textbox'
 import {
   updateFontFamily,
@@ -34,8 +34,8 @@ import {
 import ImageComponent from '@/components/config/image'
 import OtherComponent from '@/components/config/other'
 import { useCanvasHistoryStack } from '@/components/config/hooks/useCanvasHistoryStack'
-import { useKeystrokeListener } from '@/components/config/hooks/useKeystrokeListener'
 import { useCutCopyPaste } from '@/components/config/hooks/useCutCopyPaste'
+import { useHotkeys } from 'react-hotkeys-hook'
 
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
@@ -58,6 +58,15 @@ export default function Home() {
       },
     },
   ])
+
+  useHotkeys('meta+z', undo)
+  useHotkeys('meta+shift+z', redo)
+  useHotkeys('meta+c', copy)
+  useHotkeys('meta+x', cut)
+  useHotkeys('meta+v', paste)
+  useHotkeys('meta+d', duplicate)
+  useHotkeys('meta+d', duplicate)
+  useHotkeys('delete', () => handleDeleteObject(canvas.current))
 
   useEffect(() => {
     // initial mount hack
@@ -280,16 +289,6 @@ export default function Home() {
     )
   }
 
-  useKeystrokeListener(canvas.current, {
-    'control+z': undo,
-    'control+shift+z': redo,
-    'control+c': copy,
-    'control+x': cut,
-    'control+v': paste,
-    'control+d': duplicate,
-    delete: handleDeleteObject,
-  })
-
   const handleAddNewPage = async () => {
     const newId = nanoid()
     setCanvasTabObject([
@@ -429,9 +428,8 @@ export default function Home() {
       </div>
       <div role="tablist" className="tabs tabs-lifted mt-[-35px]">
         {canvasTabObject.map((tab: any, index: number) => (
-          <>
+          <Fragment key={`tab_control_${index}`}>
             <a
-              key={`tab_control_${index}`}
               role="tab"
               className={`tab bg-white ${activeTab === index && 'tab-active'}`}
               onClick={() => handleActiveTabChange(index)}
@@ -480,7 +478,7 @@ export default function Home() {
                 <canvas id={tab.id} />
               </div>
             </div>
-          </>
+          </Fragment>
         ))}
         <input
           type="radio"
