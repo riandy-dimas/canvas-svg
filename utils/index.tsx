@@ -17,8 +17,9 @@ export const CANVAS_CONFIG = {
   width: 1123,
   renderOnAddRemove: true,
   preserveObjectStacking: true,
+  shouldEmbedFontDefinition: false,
   fontUrl:
-    'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap',
+    'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
 }
 
 export const CONTROL_CONFIG = {
@@ -100,6 +101,7 @@ export const buttonDecorationBuilder = (
 export const updateFontFamily = async (
   font?: string,
   canvas?: Canvas | null,
+  textboxObject?: Textbox,
 ) => {
   if (!font) return
   var myfont = new FontFaceObserver(font)
@@ -107,8 +109,11 @@ export const updateFontFamily = async (
     await myfont.load()
   }
   if (!canvas) return
-  // when font is loaded, use it.
-  canvas.getActiveObject()?.set('fontFamily', font)
+  if (textboxObject) {
+    textboxObject.set('fontFamily', font)
+  } else {
+    canvas.getActiveObject()?.set('fontFamily', font)
+  }
   canvas.requestRenderAll()
 }
 
@@ -307,12 +312,20 @@ const getEmbeddedFontFromCSS = async (CSSText: string) => {
   }
 }
 
-export const getGoogleFontAsBase64 = async (fontHref: string) => {
+export const getGoogleFontFaceSrc = async (fontHref: string) => {
   try {
     if (!fontHref.startsWith('https://fonts.googleapis.com')) {
       throw new Error('URL is not from Google Font')
     }
-    const fetchedCSSText = await (await fetch(fontHref)).text()
+    return await (await fetch(fontHref)).text()
+  } catch (e) {
+    throw new Error(`Error Load Font`, { cause: e })
+  }
+}
+
+export const getGoogleFontAsBase64 = async (fontHref: string) => {
+  try {
+    const fetchedCSSText = await getGoogleFontFaceSrc(fontHref)
     const embeddedFonts = await getEmbeddedFontFromCSS(fetchedCSSText)
     return embeddedFonts
   } catch (e) {
