@@ -19,7 +19,8 @@ import {
   CONTROL_CONFIG,
   initGridSnap,
   fixTspanPosSVGObjImport,
-  getGoogleFontAsBase64,
+  updateFontFamily,
+  getGoogleFontFaceSrc,
 } from '@/utils'
 import { nanoid } from 'nanoid'
 import {
@@ -156,13 +157,14 @@ export default function Home() {
 
   const handleAddText = async (canvas: Canvas | null) => {
     canvas?.discardActiveObject()
-    const text = new Textbox('New text', {
+    const text = new Textbox('', {
       snapAngle: CONTROL_CONFIG.snapAngle,
       snapThreshold: CONTROL_CONFIG.snapThreshold,
       editable: true,
       width: 200,
       textAlign: 'left',
       customId: nanoid(),
+      fontFamily: 'Inter',
     })
     text.on('selected', (e) => {
       setSelectedObject(e.target)
@@ -171,6 +173,7 @@ export default function Home() {
       setSelectedObject(undefined)
     })
 
+    await updateFontFamily('Inter', canvas, text)
     canvas?.add(text)
     canvas?.bringObjectToFront(text)
     canvas?.setActiveObject(text)
@@ -288,18 +291,22 @@ export default function Home() {
     setExporting(true)
     for (let i in canvasTabObject) {
       const canvasExportInstance = new Canvas('export', CANVAS_CONFIG)
-      const base64Font = await getGoogleFontAsBase64(CANVAS_CONFIG.fontUrl)
 
       const canvasObjJsonRAW = canvasTabObject[i].canvasObj
       const canvasObj =
         await canvasExportInstance.loadFromJSON(canvasObjJsonRAW)
 
-      const svgString = String(canvasObj.toSVG())
-      const injectedSvg = svgString.replace(
-        '<defs>',
-        `<defs>\n<style>\n${base64Font}\n</style>`,
-      )
-      const blob = new Blob([injectedSvg], { type: 'image/svg+xml' })
+      let svgString = String(canvasObj.toSVG())
+
+      if (CANVAS_CONFIG.shouldEmbedFontDefinition) {
+        const fontFaceSrc = await getGoogleFontFaceSrc(CANVAS_CONFIG.fontUrl)
+        svgString = svgString.replace(
+          '<defs>',
+          `<defs>\n<style>\n${fontFaceSrc}\n</style>`,
+        )
+      }
+
+      const blob = new Blob([svgString], { type: 'image/svg+xml' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -391,7 +398,7 @@ export default function Home() {
       <div className="hidden">
         <canvas id="export" className="hidden" />
       </div>
-      <div id="menu" className="min-w-[180px]">
+      <div id="menu" className="min-w-[220px]">
         <ul className="div p-2 flex flex-col bg-base-200 rounded-lg rounded-r-none gap-1">
           <li className="flex flex-row items-center justify-between">
             <button
@@ -486,10 +493,10 @@ export default function Home() {
           <Fragment key={`tab_control_${index}`}>
             <a
               role="tab"
-              className={`tab !px-2 bg-white ${activeTab === index && 'tab-active'}`}
+              className={`tab !px-2 w-[100px] bg-white ${activeTab === index && 'tab-active'}`}
               onClick={() => handleActiveTabChange(index)}
             >
-              <div className="flex flex-row items-center">
+              <div className="flex flex-row items-center justify-between">
                 {`Page ${index + 1}`}
 
                 {index !== 0 && index === activeTab && (
@@ -525,7 +532,7 @@ export default function Home() {
         ))}
         <a
           role="tab"
-          className="tab bg-white h-[32px] !p-0"
+          className="tab bg-white h-[32px] w-[100px] !p-0"
           onClick={handleAddNewPage}
         >
           <button className="btn no-animation btn-neutral btn-xs h-full w-full rounded-b-none">

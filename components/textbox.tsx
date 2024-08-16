@@ -1,11 +1,6 @@
 import React, { useState } from 'react'
 import { Canvas } from 'fabric'
-import {
-  buttonDecorationBuilder,
-  fontDecoration,
-  getFontList,
-  updateFontFamily,
-} from '@/utils'
+import { buttonDecorationBuilder, fontDecoration } from '@/utils'
 import { Trash2 } from 'lucide-react'
 
 type TextboxComponent = { canvas?: Canvas | null; onDelete: () => void }
@@ -96,7 +91,7 @@ const TextboxComponent = (props: TextboxComponent) => {
               }}
             />
           </label>
-          <select
+          {/* <select
             className="select select-bordered w-full join-item"
             value={textBoxProperty['fontFamily']}
             onChange={async (e) => {
@@ -109,7 +104,7 @@ const TextboxComponent = (props: TextboxComponent) => {
             {(getFontList() || []).map((value, index) => (
               <option key={index}>{value}</option>
             ))}
-          </select>
+          </select> */}
         </div>
         <div>
           <button
