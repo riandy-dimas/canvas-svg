@@ -43,14 +43,32 @@ import React from 'react'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import useHotKey from '@/hooks/useHotkey'
 
+function Configuration({
+  canvas,
+  onDelete,
+}: {
+  canvas: Canvas | null
+  onDelete: () => void
+}) {
+  if (!canvas?.getActiveObject()) return null
+  if (canvas.getActiveObject() instanceof Textbox) {
+    return <TextboxComponent canvas={canvas} onDelete={onDelete} />
+  }
+  if (canvas.getActiveObject() instanceof FabricImage) {
+    return <ImageComponent canvas={canvas} onDelete={onDelete} />
+  }
+  return <OtherComponent canvas={canvas} onDelete={onDelete} />
+}
+
 export default function Home() {
   const [isExporting, setExporting] = useState(false)
   const [selectedObject, setSelectedObject] = useState<FabricObject>()
   const [isShowGrid, setIsShowGrid] = useState<boolean>(false)
   const [gridObjects, setGridObjects] = useState<any>(null)
 
-  const [activeTab, setActiveTab] = useState<number>(-1)
-  const [initialMount, setInitialMount] = useState<boolean>(true)
+  const [activeTab, setActiveTab] = useState<number>(0)
+  const initialMount = useRef(true)
+  const [canvasInstance, setCanvasInstance] = useState<Canvas | null>(null)
   const [canvasTabObject, setCanvasTabObject] = useState<any>([
     {
       id: 'page_one',
@@ -71,8 +89,8 @@ export default function Home() {
     updateTabHistoryStack,
     loadSnapshotFromLocalStorage,
     deletePageStackSnapshot,
-  } = useCanvasHistoryStack(canvas.current)
-  const { cut, copy, paste, duplicate } = useCutCopyPaste(canvas.current)
+  } = useCanvasHistoryStack(canvasInstance)
+  const { cut, copy, paste, duplicate } = useCutCopyPaste(canvasInstance)
   const { getLocalStorage } = useLocalStorage()
   useHotKey('mod+z', undo)
   useHotKey('mod+shift+z', redo)
@@ -83,15 +101,19 @@ export default function Home() {
   useHotKey('delete', () => handleDeleteObject(canvas.current))
 
   useEffect(() => {
-    // initial mount hack
-    if (initialMount) {
-      setActiveTab(0)
-      setInitialMount(false)
-      initializeCanvasFromLocalStorageSnapshot()
-    } else {
-      initializeCanvas()
+    let cancelled = false
+    async function initialize() {
+      const snapshot = initialMount.current
+        ? await initializeCanvasFromLocalStorageSnapshot()
+        : undefined
+      if (cancelled) return
+      initialMount.current = false
+      const instance = await initializeCanvas(snapshot)
+      if (!cancelled) setCanvasInstance(instance)
     }
+    void initialize()
     return () => {
+      cancelled = true
       canvas.current?.off('object:modified')
       canvas.current?.dispose()
       canvas.current = null
@@ -117,11 +139,15 @@ export default function Home() {
   }, [isShowGrid])
 
   const initNewCanvasWithTab = (id: string) => new Canvas(id, CANVAS_CONFIG)
-  const initializeCanvas = async () => {
+  async function initializeCanvas(
+    snapshot?: Parameters<Canvas['loadFromJSON']>[0],
+  ) {
     canvas.current = await initNewCanvasWithTab(canvasTabObject[activeTab]?.id)
 
     if (canvasTabObject[activeTab]?.canvasObj) {
-      await canvas.current?.loadFromJSON(canvasTabObject[activeTab].canvasObj)
+      await canvas.current?.loadFromJSON(
+        snapshot ?? canvasTabObject[activeTab].canvasObj,
+      )
       await canvas.current?.renderAll()
     }
 
@@ -129,8 +155,9 @@ export default function Home() {
       // TODO: should update canvasTabObj also, current tab object only updated when tab changed
       saveState(canvas.current, activeTab, false)
     })
+    return canvas.current
   }
-  const initializeCanvasFromLocalStorageSnapshot = async () => {
+  async function initializeCanvasFromLocalStorageSnapshot() {
     const GLOBAL_SNAPSHOT = await getLocalStorage('CANVAS_SVG_GLOBAL_SNAPSHOT')
     if (GLOBAL_SNAPSHOT) {
       const firstSnapshot = GLOBAL_SNAPSHOT[0]
@@ -145,13 +172,11 @@ export default function Home() {
           }
         },
       )
-      await setActiveTab(0)
-
-      await canvas.current?.loadFromJSON(canvasObjFromSnapshot)
       await setCanvasTabObject(canvasTabObjFromSnapshot)
       await updateTabHistoryStack(0, 0)
 
       await loadSnapshotFromLocalStorage()
+      return canvasObjFromSnapshot
     }
   }
 
@@ -217,7 +242,7 @@ export default function Home() {
     }
   }
 
-  const handleDeleteObject = (canvas?: Canvas | null) => {
+  function handleDeleteObject(canvas?: Canvas | null) {
     const object = canvas?.getActiveObject()!
     canvas?.remove(object)
     setSelectedObject(undefined)
@@ -292,7 +317,11 @@ export default function Home() {
     for (let i in canvasTabObject) {
       const canvasExportInstance = new Canvas('export', CANVAS_CONFIG)
 
-      const canvasObjJsonRAW = canvasTabObject[i].canvasObj
+      // Export the live active page, including imports and clipboard changes.
+      const canvasObjJsonRAW =
+        Number(i) === activeTab && canvas.current
+          ? canvas.current.toJSON()
+          : canvasTabObject[i].canvasObj
       const canvasObj =
         await canvasExportInstance.loadFromJSON(canvasObjJsonRAW)
 
@@ -317,32 +346,6 @@ export default function Home() {
     }
 
     setExporting(false)
-  }
-
-  const Configuration = (props: { canvas?: Canvas | null }) => {
-    if (!props.canvas?.getActiveObject()) return null
-    if (props.canvas?.getActiveObject() instanceof Textbox) {
-      return (
-        <TextboxComponent
-          canvas={props?.canvas}
-          onDelete={() => handleDeleteObject(props.canvas)}
-        />
-      )
-    }
-    if (props.canvas?.getActiveObject() instanceof FabricImage) {
-      return (
-        <ImageComponent
-          canvas={props?.canvas}
-          onDelete={() => handleDeleteObject(props.canvas)}
-        />
-      )
-    }
-    return (
-      <OtherComponent
-        canvas={props?.canvas}
-        onDelete={() => handleDeleteObject(props.canvas)}
-      />
-    )
   }
 
   const handleAddNewPage = async () => {
@@ -484,7 +487,8 @@ export default function Home() {
         <div className="bg-base-200 rounded-l-lg rounded-r-none mt-2 text-primary">
           <Configuration
             key={selectedObject?.customId}
-            canvas={canvas?.current}
+            canvas={canvasInstance}
+            onDelete={() => handleDeleteObject(canvasInstance)}
           />
         </div>
       </div>

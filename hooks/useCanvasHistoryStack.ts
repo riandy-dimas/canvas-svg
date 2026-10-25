@@ -10,16 +10,6 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
   const [currentWorkingPage, setCurrentWorkingPage] = useState<number>(0)
   const { setLocalStorage, getLocalStorage } = useLocalStorage()
 
-  useEffect(() => {
-    if (!canvas) return
-    if (!historyStack) {
-      return
-    }
-    const isUndoState = stackCursor < historyStack.length - 1
-
-    isUndoState && saveState(canvas, currentWorkingPage, true)
-  }, [historyStack])
-
   const loadSnapshotFromLocalStorage = async () => {
     const snapshot = await getLocalStorage(GLOBAL_SNAPSHOT_LS_KEY)
 
@@ -51,9 +41,11 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     if (!newCanvas) return
     setCurrentWorkingPage(activePage)
     const state = await newCanvas.toJSON()
+    const truncateFuture =
+      shouldClearFuture || stackCursor < historyStack.length - 1
 
     setHistoryStack((prev: any) => {
-      if (shouldClearFuture) {
+      if (truncateFuture) {
         const newStack = prev.slice(0, stackCursor + 1)
         updatePageStackSnapshot(activePage, [...newStack, state])
         return [...newStack, state]
@@ -64,7 +56,7 @@ export const useCanvasHistoryStack = (canvas: Canvas | null) => {
     })
 
     setStackCursor((prev) => {
-      if (shouldClearFuture) {
+      if (truncateFuture) {
         return stackCursor + 1
       } else {
         return prev + 1

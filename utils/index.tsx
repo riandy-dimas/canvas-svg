@@ -1,5 +1,6 @@
 import clsx from 'clsx'
-import { Canvas, FabricObject, Textbox } from 'fabric'
+import { BaseFabricObject, Canvas, FabricObject, Textbox } from 'fabric'
+import { installGradientUpdater } from 'fabric/extensions'
 import {
   AlignCenter,
   AlignLeft,
@@ -12,11 +13,19 @@ import FontFaceObserver from 'fontfaceobserver'
 import { nanoid } from 'nanoid'
 import { SVGParsingOutput } from '@/types'
 
+// Keep Fabric 6 document placement and gradient opacity when loading saved work.
+BaseFabricObject.ownDefaults.originX = 'left'
+BaseFabricObject.ownDefaults.originY = 'top'
+installGradientUpdater()
+
 export const CANVAS_CONFIG = {
   height: 794,
   width: 1123,
   renderOnAddRemove: true,
   preserveObjectStacking: true,
+  fireMiddleClick: false,
+  fireRightClick: false,
+  stopContextMenu: false,
   shouldEmbedFontDefinition: false,
   fontUrl:
     'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
