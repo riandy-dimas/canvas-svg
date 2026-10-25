@@ -1,0 +1,286 @@
+{
+  "date": "2026-10-25",
+  "repository": "canvas-svg",
+  "baselineHead": "8c3e7d71e9515a16f37e190507ab90f748962cbf",
+  "baselineVersions": {
+    "clsx": "^2.1.1",
+    "fabric": "^6.1.0",
+    "fabricjs-react": "^2.0.0",
+    "fontfaceobserver": "^2.3.0",
+    "lucide-react": "^0.424.0",
+    "lz-string": "^1.5.0",
+    "nanoid": "^5.0.7",
+    "next": "14.2.5",
+    "prettier": "^3.3.3",
+    "react": "^18.3.1",
+    "react-device-detect": "^2.2.3",
+    "react-dom": "^18.3.1",
+    "react-hotkeys-hook": "^4.5.0"
+  },
+  "versions": {
+    "node": "24.22.1",
+    "engines": "24.x",
+    "packageManager": "pnpm@10.33.0",
+    "next": "16.4.3",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "eslint-config-next": "16.4.3",
+    "@types/node": "24.19.2",
+    "fabric": "7.4.0"
+  },
+  "lockfile": "pnpm-lock.yaml",
+  "lockSha256": "c11182dc2a11500d6fb652620cb9ce303ead21bd454823a7bec44c45fbb29dd7",
+  "baselineAudit": {
+    "info": 0,
+    "low": 8,
+    "moderate": 38,
+    "high": 63,
+    "critical": 6
+  },
+  "audits": {
+    "all": {
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 2,
+        "high": 0,
+        "critical": 0
+      },
+      "highOrCritical": []
+    },
+    "production": {
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "highOrCritical": []
+    }
+  },
+  "checks": [
+    {
+      "phase": "baseline-audit",
+      "command": "pnpm audit --json",
+      "node": "v24.22.1",
+      "exit": 1,
+      "signal": null,
+      "seconds": 3
+    },
+    {
+      "phase": "baseline-install",
+      "command": "pnpm install --frozen-lockfile",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 93
+    },
+    {
+      "phase": "baseline-build",
+      "command": "pnpm run build",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 111
+    },
+    {
+      "phase": "upgrade-install",
+      "command": "pnpm install --no-frozen-lockfile",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 279
+    },
+    {
+      "phase": "upgrade-lint",
+      "command": "pnpm run lint",
+      "node": "v24.22.1",
+      "exit": 1,
+      "signal": null,
+      "seconds": 147
+    },
+    {
+      "phase": "upgrade-build",
+      "command": "pnpm run build",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 223
+    },
+    {
+      "phase": "lint-tooling-install",
+      "command": "pnpm install --no-frozen-lockfile",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 25
+    },
+    {
+      "phase": "browser-dependency-install",
+      "command": "pnpm install --no-frozen-lockfile",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 22
+    },
+    {
+      "phase": "final-lint",
+      "command": "pnpm run lint",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 74
+    },
+    {
+      "phase": "final-typecheck",
+      "command": "pnpm run typecheck",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 7
+    },
+    {
+      "phase": "final-build",
+      "command": "pnpm run build",
+      "node": "v24.22.1",
+      "exit": 1,
+      "signal": null,
+      "seconds": 8
+    },
+    {
+      "phase": "frozen-install",
+      "command": "pnpm install --frozen-lockfile",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 2
+    },
+    {
+      "phase": "final-audit",
+      "command": "pnpm audit --json",
+      "node": "v24.22.1",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1
+    },
+    {
+      "phase": "final-production-audit",
+      "command": "pnpm audit --json --prod",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1
+    },
+    {
+      "phase": "fabric7-install",
+      "command": "pnpm install --no-frozen-lockfile",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 17
+    },
+    {
+      "phase": "fabric-extension-install",
+      "command": "pnpm add westures@1.1.1",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 7
+    },
+    {
+      "phase": "patched-build",
+      "command": "pnpm run build",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 271
+    },
+    {
+      "phase": "clean-frozen-install",
+      "command": "pnpm install --frozen-lockfile",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 1
+    },
+    {
+      "phase": "compatible-patch-update",
+      "command": "pnpm update --depth Infinity",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 49
+    },
+    {
+      "phase": "final-browser",
+      "command": "pnpm run test:e2e",
+      "node": "v24.22.1",
+      "exit": 1,
+      "signal": null,
+      "seconds": 587
+    },
+    {
+      "phase": "verified-lint",
+      "command": "pnpm run lint",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 94
+    },
+    {
+      "phase": "verified-typecheck",
+      "command": "pnpm run typecheck",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 25
+    },
+    {
+      "phase": "verified-browser",
+      "command": "pnpm run test:e2e",
+      "node": "v24.22.1",
+      "exit": 1,
+      "signal": null,
+      "seconds": 33
+    },
+    {
+      "phase": "compatible-audit",
+      "command": "pnpm audit --json",
+      "node": "v24.22.1",
+      "exit": 1,
+      "signal": null,
+      "seconds": 1
+    },
+    {
+      "phase": "verified-build",
+      "command": "pnpm run build",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 407
+    },
+    {
+      "phase": "live-export-build",
+      "command": "pnpm run build",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 72
+    },
+    {
+      "phase": "live-export-browser",
+      "command": "pnpm run test:e2e",
+      "node": "v24.22.1",
+      "exit": 0,
+      "signal": null,
+      "seconds": 12
+    }
+  ],
+  "browser": null,
+  "notes": [
+    "Webpack remains selected. Fabric's extension barrel requires the westures companion package.",
+    "Regression coverage includes legacy text/gradient JSON, page switching, undo/redo, SVG import and keyboard copy/cut/paste. Export now reads the live active canvas so new imports and clipboard changes are included."
+  ],
+  "blockers": []
+}
